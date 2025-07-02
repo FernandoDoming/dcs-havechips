@@ -133,7 +133,7 @@ function HC:CreateChief(side, alias)
 end   
 
 --Creates army brigade and an airwing at specified base and warehouse and gives control of them to the chief
-function HC:InitBaseUnits(warehouse, ab)
+function HC:PopulateBase(warehouse, ab)
     hcl("HC:InitBaseUnits Creating base units")    
     local side = string.upper(ab:GetCoalitionName())
     local templates = self[side].TEMPLATES
@@ -184,7 +184,7 @@ function HC:InitBaseUnits(warehouse, ab)
         brigade:AddPlatoon(platoon)
     end
     chief:AddBrigade(brigade)
-    hcl("Added brigade to chief")
+    
     --Air units
     local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCE0}
@@ -254,7 +254,6 @@ function HC:InitBaseUnits(warehouse, ab)
         end
     end    
     chief:AddAirwing(airwing) 
-    hcl("Added airwing to chief")
 end
 --Returns a list of zones which are inside specified "parent" zone
 function HC:GetChildZones(parent)
@@ -328,7 +327,7 @@ function HC:InitAirbases()
                 hcl("Spawning warehouse ")
             end
             if(warehouse ~= nil) then
-                self:InitBaseUnits(warehouse, ab)
+                self:PopulateBase(warehouse, ab)
             else
                 hcw(string.format("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Warehouse at %s is nil", ab:GetName()))            
             end          
