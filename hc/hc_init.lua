@@ -87,28 +87,8 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
-    --battlefield zone covering the entire area of the map where action takes place
-    --Not sure if it is strictly necessary, but border area does affect CHIEF behavior
-    local battlefieldZone = ZONE:New("BATTLEFIELD")
-    if(battlefieldZone) then
-        chief:AddBorderZone(ZONE:New("BATTLEFIELD"))
-        chief:AddConflictZone(ZONE:New("BATTLEFIELD"))    
-    end        
     chief:SetTacticalOverviewOn()
-    chief:SetVerbosity(3)
-    local airbases = AIRBASE.GetAllAirbases()
-    --Add every airbase to chief's strategic zones
-    for i=1, #(airbases) do
-        local ab = airbases[i]
-        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
-        if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
-            opsZone:SetDrawZone(false)
-        end
-        chief:AddStrategicZone(opsZone)
-        --customize chief response for strategic zone
-        self:SetChiefStrategicZoneBehavior(chief, opsZone)
-     end
-
+    chief:SetVerbosity(1)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         MESSAGE:New(string.format("Zone lost")):ToAll()
     end
@@ -132,7 +112,7 @@ function HC:CreateChief(side, alias)
     --return chief
 end   
 
---Creates army brigade and an airwing at specified base and warehouse and gives control of them to the chief
+--Creates army brigade and an airwing at specified base and warehouse and provides them to chief
 function HC:PopulateBase(warehouse, ab)
     hcl("HC:InitBaseUnits Creating base units")    
     local side = string.upper(ab:GetCoalitionName())
@@ -152,6 +132,7 @@ function HC:PopulateBase(warehouse, ab)
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         :InitRandomizeZones( childZones )
         local bsGroup = baseSecurity:Spawn()
+        chief:AddAgent(bsGroup)
     else
         hcw(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
     end
@@ -164,7 +145,7 @@ function HC:PopulateBase(warehouse, ab)
         platoon:AddMissionCapability({AUFTRAG.Type.CONQUER, AUFTRAG.Type.CAPTUREZONE}, 70)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
         platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
-        platoon:SetMissionRange(5)
+        platoon:SetMissionRange(25)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.MECHANIZED) do
@@ -187,63 +168,65 @@ function HC:PopulateBase(warehouse, ab)
     
     --Air units
     local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
-    local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCE0}
+    local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.RESCUEHELO, AUFTRAG.Type.CTLD}
 
     local airwing=AIRWING:New(warehouse:GetName(), string.format("%s Air wing %s", side, ab:GetName()))
-    airwing:SetTakeoffHot()
+    --airwing:SetTakeoffHot()
+    airwing:SetTakeoffAir()
+    airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
     for i=1, #(templates.TRANSPORT_HELI) do
-            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 3, string.format("%s Helicopter Transport Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetGrouping(2) -- Two aircraft per group.
             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
             squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
-            squadron:SetMissionRange(50) -- Squad will be considered for targets within 200 NM of its airwing location.
+            squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
             airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
         for i=1, #(templates.ATTACK_HELI) do
-            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 5, string.format("%s Attack Helicopter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 3, string.format("%s Attack Helicopter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetGrouping(2) -- Two aircraft per group.
             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
-            squadron:AddMissionCapability( {AUFTRAG.Type.CAS}, 80) -- The missions squadron can perform
-            squadron:SetMissionRange(50) -- Squad will be considered for targets within 200 NM of its airwing location.
+            squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
+            squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
     if(ab:GetCategory() == Airbase.Category.AIRDROME) then
         for i=1, #(templates.CAP) do
-                local squadron=SQUADRON:New(templates.CAP[i], 5, string.format("%s Fighter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.CAP[i], 3, string.format("%s Fighter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2) -- Two aircraft per group.
                 squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(100) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
                 squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.CAS) do
-                local squadron=SQUADRON:New(templates.CAS[i], 5, string.format("%s Attack Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.CAS[i], 3, string.format("%s Attack Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2) -- Two aircraft per group.
                 squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
                 airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
                 squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.STRIKE) do
-                local squadron=SQUADRON:New(templates.STRIKE[i], 5, string.format("%s Strike Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.STRIKE[i], 3, string.format("%s Strike Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2) -- Two aircraft per group.
                 squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
                 airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
                 squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
             for i=1, #(templates.SEAD) do
-                local squadron=SQUADRON:New(templates.SEAD[i], 5, string.format("%s SEAD Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.SEAD[i], 3, string.format("%s SEAD Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2) -- Two aircraft per group.
                 squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
@@ -254,6 +237,7 @@ function HC:PopulateBase(warehouse, ab)
         end
     end    
     chief:AddAirwing(airwing) 
+
 end
 --Returns a list of zones which are inside specified "parent" zone
 function HC:GetChildZones(parent)
@@ -272,7 +256,7 @@ function HC:SetChiefStrategicZoneBehavior(chief, zone)
     --
     -- Here, we create an enhanced CAS mission and employ at least on and at most two asset groups.
     -- NOTE that two objects are returned, the resource list (ResourceOccupied) and the first resource of that list (resourceCAS).
-    local ResourceOccupied, resourceCAS=chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 2)
+    local ResourceOccupied, resourceCAS=chief:CreateResource(AUFTRAG.Type.NOTHING, 1, 1)
     -- Add at least one RECON mission that uses UAV type assets.
     --myChief:AddToResource(ResourceOccupied, AUFTRAG.Type.RECON, 1, nil, GROUP.Attribute.AIR_UAV)
     -- Add at least one but at most two BOMBCARPET missions.
@@ -283,7 +267,8 @@ function HC:SetChiefStrategicZoneBehavior(chief, zone)
     -- Here, we create an ONGUARD mission and employ at least on and at most five infantry assets.
     local ResourceEmpty, resourceInf=chief:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1)
     -- Add a transport to the infantry resource. We want at least one and up to two transport helicopters.
-    chief:AddTransportToResource(resourceInf, 1, 2, AUFTRAG.Type.OPSTRANSPORT)
+    chief:AddTransportToResource(resourceInf, 1, 4, GROUP.Attribute.AIR_TRANSPORTHELO)
+    --chief:AddTransportToResource(resourceInf, 1, 1, AUFTRAG.Type.TROOPTRANSPORT)
 
     -- Add stratetic zone with customized reaction.
     chief:SetStrategicZoneResourceEmpty(zone, ResourceEmpty)
@@ -297,15 +282,18 @@ function HC:InitAirbases()
     local airbases = AIRBASE.GetAllAirbases()
     for i=1, #(airbases) do
         local ab = airbases[i]
+        local side = string.upper(ab:GetCoalitionName())  
         hcl("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
+        opsZone:Start()
         --If airbase is not neutral      
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
             local side = string.upper(ab:GetCoalitionName())        
-            opsZone:SetDrawZone(false)
             local warehouseName = side.."_WAREHOUSE_"..ab:GetName()
+            local chief = self[string.upper(side)].CHIEF
             --Check if we already have a warehouse
             local warehouse = STATIC:FindByName(warehouseName, false)
+            opsZone:SetDrawZone(false)
             if( warehouse) then
                 hcw(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
             else
@@ -326,14 +314,16 @@ function HC:InitAirbases()
                 warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
                 hcl("Spawning warehouse ")
             end
-            if(warehouse ~= nil) then
-                self:PopulateBase(warehouse, ab)
-            else
-                hcw(string.format("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Warehouse at %s is nil", ab:GetName()))            
-            end          
+            self:PopulateBase(warehouse, ab)
+            --Add ops zone to both chiefs
+            HC.RED.CHIEF:AddStrategicZone(opsZone)
+            HC.BLUE.CHIEF:AddStrategicZone(opsZone)
+            --customize chief response for strategic zone
+            self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)
+            self:SetChiefStrategicZoneBehavior(HC.BLUE.CHIEF, opsZone)
         else
             --Neutral airbase
-            opsZone:SetDrawZone(true)
+            hcl("Ignoring neutral zone, it will be initialized when captured")
         end
     end
 end
@@ -342,6 +332,8 @@ HC:InitGroupTemplates()
 HC:CreateChief("red", "Zhukov")
 HC:CreateChief("blue", "McArthur")
 HC:InitAirbases()
+HC.RED.CHIEF:Start()
+HC.BLUE.CHIEF:Start()
 
-HC.RED.CHIEF:__Start(1)
-HC.BLUE.CHIEF:__Start(1)
+--HC.RED.CHIEF:__Start(1)
+--HC.BLUE.CHIEF:__Start(1)

@@ -1,6 +1,10 @@
 --Initialization script
 dofile(lfs.writedir().."Missions/havechips/hc/hc_init.lua")
 
+
+hcl("Running mission")
+
+
 -- MESSAGE:New("Spawning red SEAD at Kutaisi",  20):ToAll()
 
 -- --Spawn a red SEAD group using a random template
