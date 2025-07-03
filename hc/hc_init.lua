@@ -183,7 +183,7 @@ function HC:PopulateBase(warehouse, ab)
             squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
             squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
             --Time to get ready again, time to repair per life point taken
-            squadron:SetTuroverTime(10, 0)
+            squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
@@ -193,7 +193,7 @@ function HC:PopulateBase(warehouse, ab)
             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
             squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
             squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
-            squadron:SetTuroverTime(10, 0)
+            squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
@@ -205,7 +205,7 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-                squadron:SetTuroverTime(10, 0)
+                squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
                 airwing:AddSquadron(squadron)
         end
@@ -215,7 +215,7 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-                squadron:SetTuroverTime(10, 0)
+                squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
                 airwing:AddSquadron(squadron)
         end
@@ -225,7 +225,7 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-                squadron:SetTuroverTime(10, 0)
+                squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
                 airwing:AddSquadron(squadron)
         end
@@ -235,7 +235,7 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
-                squadron:SetTuroverTime(10, 0)
+                squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD}) --20 sets of armament
                 squadron:SetVerbosity(3)                
                 airwing:AddSquadron(squadron)
@@ -289,7 +289,7 @@ function HC:InitAirbases()
         local ab = airbases[i]
         local side = string.upper(ab:GetCoalitionName())  
         hcl("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
-        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
+        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())        
         opsZone:Start()
         --If airbase is not neutral      
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
@@ -320,6 +320,9 @@ function HC:InitAirbases()
                 hcl("Spawning warehouse ")
             end
             self:PopulateBase(warehouse, ab)
+            --after spawning units set capture only by units?
+            --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
+            opsZone:SetObjectCategories({Object.Category.UNIT})
             --Add ops zone to both chiefs
             HC.RED.CHIEF:AddStrategicZone(opsZone)
             HC.BLUE.CHIEF:AddStrategicZone(opsZone)
