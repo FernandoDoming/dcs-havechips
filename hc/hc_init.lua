@@ -323,8 +323,8 @@ function HC:InitAirbases()
             --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
             opsZone:SetObjectCategories({Object.Category.UNIT})
             --Add ops zone to both chiefs
-            HC.RED.CHIEF:AddStrategicZone(opsZone)
-            HC.BLUE.CHIEF:AddStrategicZone(opsZone)
+            HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
+            HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, 2, {}, {})
             --customize chief response for strategic zone
             self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)
             self:SetChiefStrategicZoneBehavior(HC.BLUE.CHIEF, opsZone)
