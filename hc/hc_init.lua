@@ -317,7 +317,6 @@ function HC:InitAirbases()
                 end
                 position = whSpawnZone:GetPointVec2()
                 warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
-                hcl("Spawning warehouse ")
             end
             self:PopulateBase(warehouse, ab)
             --after spawning units set capture only by units?
