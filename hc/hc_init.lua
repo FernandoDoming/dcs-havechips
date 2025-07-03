@@ -182,6 +182,8 @@ function HC:PopulateBase(warehouse, ab)
             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
             squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
             squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
+            --Time to get ready again, time to repair per life point taken
+            squadron:SetTuroverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
@@ -191,6 +193,7 @@ function HC:PopulateBase(warehouse, ab)
             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
             squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
             squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
+            squadron:SetTuroverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
@@ -202,8 +205,8 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTuroverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
-                squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.CAS) do
@@ -212,8 +215,8 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTuroverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
-                squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.STRIKE) do
@@ -222,8 +225,8 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTuroverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
-                squadron:SetVerbosity(3)
                 airwing:AddSquadron(squadron)
         end
             for i=1, #(templates.SEAD) do
@@ -232,6 +235,7 @@ function HC:PopulateBase(warehouse, ab)
                 squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
                 squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
                 squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTuroverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD}) --20 sets of armament
                 squadron:SetVerbosity(3)                
                 airwing:AddSquadron(squadron)
