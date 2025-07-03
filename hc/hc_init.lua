@@ -89,6 +89,7 @@ function HC:CreateChief(side, alias)
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
     chief:SetVerbosity(1)
+    chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         MESSAGE:New(string.format("Zone lost")):ToAll()
     end
