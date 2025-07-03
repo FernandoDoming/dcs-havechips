@@ -85,7 +85,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
     chief:SetLimitMission(2, AUFTRAG.Type.CAPTUREZONE)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
-    chief:SetLimitMission(5, "Total")
+    chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
     chief:SetVerbosity(1)
@@ -257,7 +257,7 @@ function HC:SetChiefStrategicZoneBehavior(chief, zone)
     --
     -- Here, we create an enhanced CAS mission and employ at least on and at most two asset groups.
     -- NOTE that two objects are returned, the resource list (ResourceOccupied) and the first resource of that list (resourceCAS).
-    local ResourceOccupied, resourceCAS=chief:CreateResource(AUFTRAG.Type.NOTHING, 1, 1)
+    local ResourceOccupied, resourceCAS=chief:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1)
     -- Add at least one RECON mission that uses UAV type assets.
     --myChief:AddToResource(ResourceOccupied, AUFTRAG.Type.RECON, 1, nil, GROUP.Attribute.AIR_UAV)
     -- Add at least one but at most two BOMBCARPET missions.
