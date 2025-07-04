@@ -88,7 +88,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
-    chief:SetVerbosity(3)
+    chief:SetVerbosity(4)
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         MESSAGE:New(string.format("Zone lost")):ToAll()
@@ -129,7 +129,7 @@ function HC:PopulateBase(warehouse, ab)
         :OnSpawnGroup(function(grp)
             hcl(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
         end
-        )        
+        )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         :InitRandomizeZones( childZones )
         local bsGroup = baseSecurity:Spawn()
@@ -179,6 +179,8 @@ function HC:PopulateBase(warehouse, ab)
     local airwing=AIRWING:New(warehouse:GetName(), string.format("%s Air wing %s", side, ab:GetName()))
     --airwing:SetTakeoffHot()
     airwing:SetTakeoffAir()
+    airwing:SetDespawnAfterHolding(true)
+    airwing:SetAirbase(ab)
     airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
     for i=1, #(templates.TRANSPORT_HELI) do
             local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 3, string.format("%s Helicopter Transport Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
@@ -200,7 +202,7 @@ function HC:PopulateBase(warehouse, ab)
             squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
             squadron:SetAttribute(GROUP.Attribute.AIR_ATTACKHELO)
             squadron:SetTurnoverTime(10, 0)
-            airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
+            airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
@@ -247,7 +249,7 @@ function HC:PopulateBase(warehouse, ab)
     --             airwing:AddSquadron(squadron)
     --     end
     --end    
-    --chief:AddAirwing(airwing) 
+    chief:AddAirwing(airwing) 
 
 end
 --Returns a list of zones which are inside specified "parent" zone
@@ -289,7 +291,7 @@ function HC:InitAirbases()
         local ab = airbases[i]
         local side = string.upper(ab:GetCoalitionName())  
         hcl("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
-        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())        
+        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
         opsZone:Start()
         --If airbase is not neutral      
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
@@ -321,20 +323,23 @@ function HC:InitAirbases()
             --after spawning units set capture only by units?
             --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
             opsZone:SetObjectCategories({Object.Category.UNIT})
-        end
             HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
             self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)            
 
             -- TESTING --
-            local resourceOccupied, resourceTank = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_TANK)
-            local attackHelos = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-            local infantry = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-            HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
+            -- local resourceOccupied, resourceTank = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_TANK)
+            -- local attackHelos = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+            -- local infantry = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+            -- HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
+
+            local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
             
             local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
             HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
             HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+        end
+
     end
 end
 
