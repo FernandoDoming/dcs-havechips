@@ -91,24 +91,31 @@ function HC:CreateChief(side, alias)
     chief:SetVerbosity(4)
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
-        MESSAGE:New(string.format("Zone lost")):ToAll()
+        hcw("Zone lost")
     end
 
     function chief:OnAfterZoneCaptured(from, event, to, opszone)
-        MESSAGE:New(string.format("Zone captured")):ToAll()
+        hcw("Zone captured")
     end
 
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
-        MESSAGE:New(string.format("Zone empty")):ToAll()        
+        hcw("Zone empty")
         --zone neutralized, send troops to capture it
         --possible scenario
         --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
     end
+    
 
-    function chief:OpsOnMission(group, mission)
-        MESSAGE:New(string.format(string.format("Group %s is on a mission %s", group:GetName(), mission:GetType())), 10):ToAll()
+    function chief:OnAfterMissionAssign(From, Event, To, Mission, Legions)
+        hcl("OnAfterMissionAssign")
         --mission:SetRoe(ENUMS.ROE.)
     end
+
+    function chief:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
+        hcl("OnAfterOpsOnMission")
+        --mission:SetRoe(ENUMS.ROE.)
+    end
+
     self[string.upper(side)].CHIEF = chief
     --return chief
 end   
@@ -333,10 +340,13 @@ function HC:InitAirbases()
             -- HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
             local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-            
-            local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-            HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
+            --local attackMission = helos.mission --AUFTRAG
+            --attackMission:SetMissionAltitude(1000)
 
+            local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+            local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
+            --local transportMision = transportHelo.mission
+            --transportMision:SetAltitude(1000)
             HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
         end
 
