@@ -2,6 +2,9 @@
 function hcl(message)
     env.info("[HaveChips] "..message)    
 end 
+function hci(message)
+    hcl(message)
+end
 --write warning to log
 function hcw(message)
     env.warning("[HaveChips] "..message)
@@ -284,10 +287,6 @@ function HC:SetChiefStrategicZoneBehavior(chief, zone)
     -- Add stratetic zone with customized reaction.
     chief:SetStrategicZoneResourceEmpty(zone, ResourceEmpty)
     chief:SetStrategicZoneResourceOccupied(zone, ResourceOccupied)
-
-
-
-
 end    
 
 
@@ -299,7 +298,7 @@ function HC:InitAirbases()
         local side = string.upper(ab:GetCoalitionName())  
         hcl("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
-        opsZone:Start()
+        --opsZone:Start()
         --If airbase is not neutral      
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
             local side = string.upper(ab:GetCoalitionName())        
@@ -353,12 +352,37 @@ function HC:InitAirbases()
     end
 end
 
-HC:InitGroupTemplates()
-HC:CreateChief("red", "Zhukov")
-HC:CreateChief("blue", "McArthur")
-HC:InitAirbases()
---HC.RED.CHIEF:Start()
---HC.BLUE.CHIEF:Start()
+--load saved data
+function HC:Start()
+    local activeAirbases = {}
+    hci(lfs.writedir())
+    if (UTILS:LoadFromFile(lfs.writedir().."Missions\\", "activeAirbases.txt")) then
+        --Campaign is in progress, we have saved data
+        hci("Campaign in progress")
+    else
+        --First mission run in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
+        --everything else will be ignorespeed
+        hci("Campaign in starting, this is the first mission in campaign")
+        local airbases = AIRBASE.GetAllAirbases()
+        for i=1, #(airbases) do
+            local ab = airbases[i]
+            if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
+                --RED and BLUE bases will be considered as strategic zones, everything else will be ignored
+                if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+                    table.insert(activeAirbases, ab)
+                else
+                    table.insert(activeAirbases, ab)
+                end
+            end
+        end
+        UTILS:SaveToFile(lfs.writedir().."Missions\\","airbases.txt", activeAirbases)
+    end        
+end
 
+HC:InitGroupTemplates()
+--HC:Start()
+--HC:CreateChief("red", "Zhukov")
+--HC:CreateChief("blue", "McArthur")
+--HC:InitAirbases()
 --HC.RED.CHIEF:__Start(1)
-HC.BLUE.CHIEF:__Start(1)
+--HC.BLUE.CHIEF:__Start(1)
