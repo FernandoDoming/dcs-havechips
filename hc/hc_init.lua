@@ -356,7 +356,7 @@ end
 function HC:Start()
     local activeAirbases = {}
     hci(lfs.writedir())
-    if (UTILS:LoadFromFile(lfs.writedir().."Missions\\", "activeAirbases.txt")) then
+    if (UTILS:LoadFromFile(lfs.writedir().."Missions\\", "airbases.txt")) then
         --Campaign is in progress, we have saved data
         hci("Campaign in progress")
     else
@@ -375,7 +375,7 @@ function HC:Start()
                 end
             end
         end
-        UTILS:SaveToFile(lfs.writedir().."Missions\\","airbases.txt", activeAirbases)
+        UTILS:SaveToFile(lfs.writedir().."Missions\\","airbases.txt", JSON:encode_pretty(activeAirbases))
     end        
 end
 

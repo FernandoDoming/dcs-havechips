@@ -18,18 +18,25 @@
 --local targetZone = _DATABASE.ZONES["FARPPobeda"]
 --local attackMission = AUFTRAG:NewCASENHANCED(targetZone, nil, nil, 5)
 --HC.BLUE.CHIEF:AddMission(attackMission)
+--local JSON = loadfile("Scripts\\JSON.lua")()
+hci("lfs.writedir(): "..lfs.writedir())
+local _basePath =  lfs.writedir().."Missions\\havechips\\"   
+local JSON = loadfile(_basePath.."hc\\JSON.lua")()
 
-    local activeAirbases = {}
-
-    local savePath = "C:\\Users\\tgudelj\\Saved Games\\DCS\\Missions"
+    local activeAirbases = nil
+    local savePath = _basePath
     hci(savePath)
-    local success, airbaselist = UTILS.LoadFromFile(savePath, "airbases.txt")
+    --local success, airbaselist = UTILS.LoadFromFile(savePath, "airbases.txt")
+    local f = io.open(savePath.."airbases.txt", "rb")
+    local content = f:read("*all")
+    f:close()
+    activeAirbases = JSON.decode(content)
+    --local f = loadstring(airbaselist[1])
     
-    local f = loadstring(airbaselist[1])
-    hci("local abl = "..airbaselist[1])
-    if (success) then
+    if (activeAirbases ~= nil) then
         --Campaign is in progress, we have saved data
         hci("Campaign in progress")
+        hci(UTILS.TableShow(activeAirbases))
     else
         --First mission run in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
         --everything else will be ignorespeed
@@ -46,5 +53,5 @@
                 end
             end
         end
-        UTILS.SaveToFile(savePath,"airbases.txt", UTILS.OneLineSerialize(activeAirbases))
+        UTILS.SaveToFile(savePath,"airbases.txt", JSON.encode(activeAirbases))
     end     
