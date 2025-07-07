@@ -1,8 +1,8 @@
 --Initialization script
-dofile(lfs.writedir().."Missions/havechips/hc/hc_init.lua")
+dofile(lfs.writedir().."Missions/havechips/dev/havechips.lua")
 
 
-hcl("Running mission")
+env.info("Running mission")
 
 
 -- MESSAGE:New("Spawning red SEAD at Kutaisi",  20):ToAll()

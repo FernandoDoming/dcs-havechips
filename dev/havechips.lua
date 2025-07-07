@@ -1,15 +1,4 @@
---write info to log
-function hcl(message)
-    env.info("[HaveChips] "..message)    
-end 
-function hci(message)
-    hcl(message)
-end
---write warning to log
-function hcw(message)
-    env.warning("[HaveChips] "..message)
-end  
-
+JSON = loadfile(lfs.writedir().."Missions\\havechips\\lib\\json.lua")()
 HC = {
     RED = { 
         TEMPLATES = {}
@@ -18,9 +7,22 @@ HC = {
         TEMPLATES = {}        
     },
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
-    RESOURCES_ZONE_OCCUPIED = {},
-    RESOURCES_ZONE_EMPTY = {}
 }
+
+--Write trace message to log
+function HC:T(message)
+    env.info("[HaveChips] "..message)
+end
+
+--Write warning message to log
+function HC:W(message)
+    env.warning("[HaveChips] "..message)
+end
+
+--Write error message to log
+function HC:E(message)
+    env.error("[HaveChips] "..message)
+end
 
 --Gets all templates for side of missionType (or unit category)
 --currently TEMPLATE_CATEGORIES {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"}
@@ -30,7 +32,7 @@ function HC:GetTemplatesForCategory(side, missionType)
     local zoneName = string.upper(side.."_"..missionType.."_TEMPLATES")
     local templateZone = ZONE:FindByName(zoneName)
     if (templateZone == nil) then
-        hcw("Couldn't find template zone "..zoneName.." no templates for "..side.." "..missionType.." will be available!")
+        self:W("Couldn't find template zone "..zoneName.." no templates for "..side.." "..missionType.." will be available!")
         return {}
     end
 
@@ -39,7 +41,7 @@ function HC:GetTemplatesForCategory(side, missionType)
         function(g)
             --Get first unit in group, if in specified zone then add to templates, not perfect but it works
             if (templateZone:IsVec3InZone(g:GetUnits()[1]:GetVec3())) then
-                hcl(g.GroupName.." added to " ..side.." templates ".. missionType)
+                self:T(g.GroupName.." added to " ..side.." templates ".. missionType)
                 table.insert(templates, g:GetName())
             end    
         end
@@ -49,14 +51,14 @@ end
 
 --Initializes the templates for Airwings and platoons
 function HC:InitGroupTemplates()
-    hcl("HC:InitGroupTemplates: Initializing group templates")
+    self:T("HC:InitGroupTemplates: Initializing group templates")
     local sides = {"RED", "BLUE"}
     for j=1, #(sides) do        
         for i=1,#(HC.TEMPLATE_CATEGORIES) do
             self[string.upper(sides[j])].TEMPLATES[HC.TEMPLATE_CATEGORIES[i]] = self:GetTemplatesForCategory(sides[j], HC.TEMPLATE_CATEGORIES[i])
         end  
     end
-    hcl("HC:InitGroupTemplates: done")
+    self:T("HC:InitGroupTemplates: done")
 end
 
 function HC:CreateChief(side, alias)
@@ -94,15 +96,15 @@ function HC:CreateChief(side, alias)
     chief:SetVerbosity(4)
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
-        hcw("Zone lost")
+        self:T("Zone lost")
     end
 
     function chief:OnAfterZoneCaptured(from, event, to, opszone)
-        hcw("Zone captured")
+        self:T("Zone captured")
     end
 
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
-        hcw("Zone empty")
+        self:T("Zone empty")
         --zone neutralized, send troops to capture it
         --possible scenario
         --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
@@ -110,12 +112,12 @@ function HC:CreateChief(side, alias)
     
 
     function chief:OnAfterMissionAssign(From, Event, To, Mission, Legions)
-        hcl("OnAfterMissionAssign")
+        self:T("OnAfterMissionAssign")
         --mission:SetRoe(ENUMS.ROE.)
     end
 
     function chief:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
-        hcl("OnAfterOpsOnMission")
+        self:T("OnAfterOpsOnMission")
         --mission:SetRoe(ENUMS.ROE.)
     end
 
@@ -125,7 +127,7 @@ end
 
 --Creates army brigade and an airwing at specified base and warehouse and provides them to chief
 function HC:PopulateBase(warehouse, ab)
-    hcl("HC:InitBaseUnits Creating base units")    
+    self:T("HC:InitBaseUnits Creating base units")    
     local side = string.upper(ab:GetCoalitionName())
     local templates = self[side].TEMPLATES
     local chief = self[side].CHIEF
@@ -137,7 +139,7 @@ function HC:PopulateBase(warehouse, ab)
     if(childZonesCount > 0) then
         local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], string.format("Base security detachment %s", ab:GetName()))
         :OnSpawnGroup(function(grp)
-            hcl(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
+            self:T(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
         end
         )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
@@ -145,7 +147,7 @@ function HC:PopulateBase(warehouse, ab)
         local bsGroup = baseSecurity:Spawn()
         chief:AddAgent(bsGroup)
     else
-        hcw(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
+        self:W(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
     end
     --Generate units stationed at base and add them to chief    
     --Ground units
@@ -291,12 +293,12 @@ end
 
 
 function HC:InitAirbases()
-    hcl("HC:InitAirbases()")
+    self:T("HC:InitAirbases()")
     local airbases = AIRBASE.GetAllAirbases()
     for i=1, #(airbases) do
         local ab = airbases[i]
         local side = string.upper(ab:GetCoalitionName())  
-        hcl("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
+        self:T("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
         --opsZone:Start()
         --If airbase is not neutral      
@@ -307,7 +309,7 @@ function HC:InitAirbases()
             local warehouse = STATIC:FindByName(warehouseName, false)
             opsZone:SetDrawZone(false)
             if( warehouse) then
-                hcw(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
+                self:W(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
             else
                 local airbaseCategory = ab:GetCategory() --to be used later for disstinct setup Airbase vs FARP
                 --spawn a warehouse
@@ -318,9 +320,9 @@ function HC:InitAirbases()
                 local whSpawnZone = ab.AirbaseZone
                 if(childZonesCount > 0) then
                     whSpawnZone = childZones[math.random(childZonesCount)]
-                    hcl(string.format("Spawning warehouse on %s in zone %s", ab:GetName(), whSpawnZone:GetName()))
+                    self:T(string.format("Spawning warehouse on %s in zone %s", ab:GetName(), whSpawnZone:GetName()))
                 else
-                    hcw(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", ab:GetName(), ab:GetName()))
+                    self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", ab:GetName(), ab:GetName()))
                 end
                 position = whSpawnZone:GetPointVec2()
                 warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
@@ -353,30 +355,135 @@ function HC:InitAirbases()
 end
 
 --load saved data
+--returns bool success (true if operation was successful, false otherwise), table - json file data as Lua table
+function HC:LoadTable(filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false
+    end
+    -- Check file name.
+    if filename == nil then
+        self:E("Filename must be specified")
+        return false
+    end
+    
+    local f = io.open(filename, "rb")
+    if(f == nil) then
+        self:E("Could not open file '"..filename.."'")
+        return false
+    end        
+    local content = f:read("*all")
+    f:close()
+    local tbl = assert(JSON.decode(content), "Couldn't decode JSON data from file "..filename)
+    UTILS.TableShow(tbl)
+    return true, tbl
+end
+
+--save lua table to JSON file
+--returns bool true if successful, false otherwise
+function HC:SaveTable(table, filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false
+    end
+    -- Check file name.
+    if filename == nil then
+        self:E("Filename must be specified")
+        return false
+    end
+    if (table == nil) then
+        self:E("Table is nil")
+        return false
+    end        
+    local json = assert(JSON.encode(table),"Couldn't encode Lua table")
+    local f = assert(io.open(filename, "wb"))
+    if (f == nil) then
+        self:E("File open failed on file "..filename)
+        return false
+    end        
+    f:write(json)
+    f:close()
+end
+
+--Checks if file FileExists
+--returns true if file exists
+function HC:FileExists(filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false
+    end
+    local f=io.open(filename, "r")
+    if f~=nil then
+      io.close(f)
+      return true
+    else
+      return false
+    end
+end
+
+AIRBASEINFO = {}
+--airbase - MOOSE AIRBASE object
+--hp - airbase state 0-100 with 100 being 100% operational
+function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
+    self.AirbaseId = airbase.AirbaseId
+    self.Name = airbase:GetName()
+    self.HP = hp
+    self.Coalition = airbase:GetCoalition()
+    self.MarkId = nil
+    return self
+end
+
+function AIRBASEINFO:NewFromTable(table)
+    self.AirbaseId = table.AirbaseId
+    self.Name = table.Name
+    self.HP = table.HP
+    self.Coalition = table.Coalition
+    self.MarkId = table.MarkId
+end   
+
+function AIRBASEINFO:GetTable()
+    return {
+        AirbaseId = self.AirbaseId,
+        Name = self.Name,
+        HP = self.HP,
+        Coalition = self.Coalition,
+        MarkId = self.MarkId
+    }
+end
+
+function AIRBASEINFO:DrawInfo()
+
+end    
+
 function HC:Start()
     local activeAirbases = {}
-    hci(lfs.writedir())
-    if (UTILS:LoadFromFile(lfs.writedir().."Missions\\", "airbases.txt")) then
-        --Campaign is in progress, we have saved data
-        hci("Campaign in progress")
-    else
+    local basePath = lfs.writedir().."Missions\\havechips\\"
+    if(not self:FileExists(basePath.."airbases.json")) then
         --First mission run in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
-        --everything else will be ignorespeed
-        hci("Campaign in starting, this is the first mission in campaign")
+        --everything else will be ignored
+        self:T("Initializing campaign")
         local airbases = AIRBASE.GetAllAirbases()
         for i=1, #(airbases) do
             local ab = airbases[i]
             if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
                 --RED and BLUE bases will be considered as strategic zones, everything else will be ignored
-                if(ab:GetCategory() == Airbase.Category.AIRDROME) then
-                    table.insert(activeAirbases, ab)
-                else
-                    table.insert(activeAirbases, ab)
-                end
+                local abi = AIRBASEINFO:NewFromAIRBASE(ab, 100)
+                table.insert(activeAirbases, abi:GetTable())
             end
         end
-        UTILS:SaveToFile(lfs.writedir().."Missions\\","airbases.txt", JSON:encode_pretty(activeAirbases))
-    end        
+        --save to file
+        HC:SaveTable(activeAirbases, basePath.."airbases.json")
+    else
+        --Campaign is in progress, we have saved data
+        self:T("Loading campaign progress")
+        activeAirbases = HC:LoadTable(basePath.."airbases.json")
+    end
+    --Now we have a table of active airbases, we can now populate those airbases
+    --set their coalition and state of combat effectivenes
+    
 end
 
 HC:InitGroupTemplates()
