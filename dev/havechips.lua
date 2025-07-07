@@ -461,7 +461,7 @@ function AIRBASEINFO:DrawInfo()
     end
     if(self.MarkId ~= nil) then
         --env.info("Removing mark "..self.MarkId)
-        --coord:RemoveMark(self.MarkId)
+        coord:RemoveMark(self.MarkId)
     end
     local HPIndicator =""
     for i=1, math.floor(self.HP/10) do

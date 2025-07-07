@@ -19,7 +19,7 @@
     },
     {
         "Coalition": 2,
-        "Name": "FARPVictory",
+        "Name": "FARP Victory",
         "AirbaseID": 109,
         "HP": 25
     },
@@ -91,7 +91,7 @@
     },
     {
         "Coalition": 1,
-        "Name": "FARPPobeda",
+        "Name": "FARP Pobeda",
         "AirbaseID": 112,
         "HP": 85
     },
