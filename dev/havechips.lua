@@ -432,25 +432,6 @@ AIRBASEINFO = {
     Coalition = coalition.side.NEUTRAL,
     MarkId = nil
 }
---airbase - MOOSE AIRBASE object
---hp - airbase state 0-100 with 100 being 100% operational
-function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
-    self.AirbaseID = airbase.AirbaseID
-    self.Name = airbase:GetName()
-    self.HP = hp or 100
-    self.Coalition = airbase:GetCoalition()
-    self.MarkId = nil
-    return self
-end
-
-function AIRBASEINFO:NewFromTable(table)
-    self.AirbaseID = table.AirbaseID
-    self.Name = table.Name
-    self.HP = table.HP
-    self.Coalition = table.Coalition
-    self.MarkId = nil --Markers are dynamic, created in runtime
-    return self
-end   
 
 function AIRBASEINFO:GetTable()
     return {
@@ -494,6 +475,32 @@ function AIRBASEINFO:DrawInfo()
     HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
     env.info(HPIndicator.. " " ..tostring(self.HP))
     self.MarkId = coord:TextToAll(" "..ab:GetName().." \n "..HPIndicator.." \n", coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+end 
+
+--airbase - MOOSE AIRBASE object
+--hp - airbase state 0-100 with 100 being 100% operational
+function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
+    local o = {}
+    o.AirbaseID = airbase.AirbaseID
+    o.Name = airbase:GetName()
+    o.HP = hp or 100
+    o.Coalition = airbase:GetCoalition()
+    o.MarkId = nil
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function AIRBASEINFO:NewFromTable(table)
+    local o = {}
+    o.AirbaseID = table.AirbaseID
+    o.Name = table.Name
+    o.HP = table.HP
+    o.Coalition = table.Coalition
+    o.MarkId = table.MarkId
+    setmetatable(o, self)
+    self.__index = self
+    return o
 end    
 
 function HC:InitCampaignState()
@@ -570,6 +577,7 @@ function HC:DeleteLabels()
 end 
 
 function HC:Start()
+    self.ActiveAirbases ={}
     local basePath = lfs.writedir().."Missions\\havechips\\"
     local filename = "airbases.json"
     if(not self:FileExists(basePath..filename)) then
