@@ -20,17 +20,51 @@
 --HC.BLUE.CHIEF:AddMission(attackMission)
 --local JSON = loadfile("Scripts\\JSON.lua")()
 
-local ab = AIRBASE:FindByName("Abu al-Duhur")
-local coord = ab:GetCoordinate()
+    --local wht = STATIC:FindByName("RED_WAREHOUSE_TEMPLATE")
+    --local storageTemplate = wht:GetStaticStorage()
+    --local aircraft, liquids, equipment = storageTemplate:GetInventory()
 
-local offset = {x=500, y=0, z=500}
-local rectWidth = 4000
-local rectHeight = 1500
+    -- for _, item in ipairs(storageTemplate:GetInventory()) do
+    --     env.info(item)
+    -- end
 
-local topLeft = COORDINATE:New(coord.x + offset.x, coord.y + offset.y, coord.z + offset.z)
-local bottomRight = COORDINATE:New(topLeft.x + rectHeight, topLeft.y, topLeft.z + rectWidth)
+    --local wht = Warehouse.getByName("RED_WAREHOUSE_TEMPLATE")
 
---rgb
-local colorBlue = {0, 0, 1}
-local colorWhite = {1,1,1}
-local markId = topLeft:TextToAll(ab:GetName().."\nSome data\n███░░░░░░Line 3\nSome very long line on number four\n", coalition.side.ALL, colorWhite, 1, colorBlue, 0.5, 14, true)
+    local s = StaticObject.getByName("RED_WAREHOUSE_TEMPLATE")
+    local ware = Warehouse.getCargoAsWarehouse(s)
+    local tbl = ware:getInventory()
+
+    local airbases = AIRBASE.GetAllAirbases()
+    for i=1, #(airbases) do
+        -- local ab = airbases[i]
+        -- local storage = STORAGE:FindByName(ab:GetName())
+        -- if(storage) then
+        --     local aircraft = storage:GetInventory()
+        --     --Clear everything first
+        --     for name,_ in pairs(aircraft) do
+        --         --storage:SetItem(name,0)
+        --     end
+        --     --for assetName, _ in pairs(storageTemplate)
+        -- end
+    end
+
+
+
+        -- for _, airbaseName in ipairs(airbaseList) do
+        -- local storage = STORAGE:FindByName(airbaseName)
+        -- if storage then
+        --     local aircraft = storage:GetInventory()
+        --     for name,_ in pairs(aircraft) do
+        --     storage:SetItem(name,0)
+        --     end
+        --     for _,plane in ipairs(allowedPlanes) do
+        --     storage:SetItem(plane,1000)
+        --     end
+        --     for _,weapon in ipairs(restrictedWeapons) do
+        --     local amount = storage:GetItemAmount(weapon)
+        --     if amount > 0 then
+        --         storage:RemoveItem(weapon,amount)
+        --     end
+        --     end
+        -- end
+        -- end
