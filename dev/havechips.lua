@@ -7,6 +7,7 @@ HC = {
         TEMPLATES = {}        
     },
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
+    ActiveAirbases = {}
 }
 
 --Write trace message to log
@@ -360,18 +361,18 @@ function HC:LoadTable(filename)
     --Check io
     if not io then
         self:E("ERROR: io not desanitized. Can't save current file.")
-        return false
+        return false, nil
     end
     -- Check file name.
     if filename == nil then
         self:E("Filename must be specified")
-        return false
+        return false, nil
     end
     
     local f = io.open(filename, "rb")
     if(f == nil) then
         self:E("Could not open file '"..filename.."'")
-        return false
+        return false, nil
     end        
     local content = f:read("*all")
     f:close()
@@ -428,25 +429,26 @@ AIRBASEINFO = {}
 --airbase - MOOSE AIRBASE object
 --hp - airbase state 0-100 with 100 being 100% operational
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
-    self.AirbaseId = airbase.AirbaseId
+    self.AirbaseID = airbase.AirbaseID
     self.Name = airbase:GetName()
-    self.HP = hp
+    self.HP = hp or 100
     self.Coalition = airbase:GetCoalition()
     self.MarkId = nil
     return self
 end
 
 function AIRBASEINFO:NewFromTable(table)
-    self.AirbaseId = table.AirbaseId
+    self.AirbaseID = table.AirbaseID
     self.Name = table.Name
     self.HP = table.HP
     self.Coalition = table.Coalition
     self.MarkId = table.MarkId
+    return self
 end   
 
 function AIRBASEINFO:GetTable()
     return {
-        AirbaseId = self.AirbaseId,
+        AirbaseID = self.AirbaseID,
         Name = self.Name,
         HP = self.HP,
         Coalition = self.Coalition,
@@ -455,13 +457,96 @@ function AIRBASEINFO:GetTable()
 end
 
 function AIRBASEINFO:DrawInfo()
-
+    local colorFill = {1,0,0}
+    local fillAlpha = 0.5
+    local colorText = {1,1,1}
+    local textAlpha = 1
+    local textSize = 14
+    local ab = AIRBASE:FindByID(self.AirbaseId)
+    local coord = ab:GetCoordinate()
+    if (self.Coalition == coalition.side.RED) then
+        colorFill = {1,0,0}
+    elseif (self.Coalition == coalition.side.BLUE) then
+        colorFill = {0,0,1}
+    else
+        colorFill = {1,1,1}
+        colorText = {0.2,0.2,0.2}
+    end
+    if(self.MarkId ~= nil) then
+        coord:RemoveMark(self.MarkId)
+    end        
+    self.markId = coord:TextToAll(ab:GetName().."\nSome data\n███░░░░░░Line 3\nSome very long line on number four\n", coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end    
 
+function HC:InitCampaignState()
+    self:T("InitCampaignState")
+    for i=1, #(self.ActiveAirbases) do
+        local abInfo = AIRBASEINFO:NewFromTable(self.ActiveAirbases[i])
+        local ab = AIRBASE:FindByID(abInfo.AirbaseID)
+        ab:SetCoalition(abInfo.Coalition)
+        local side = string.upper(ab:GetCoalitionName())  
+        self:T("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
+        abInfo:DrawInfo()
+        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
+        --opsZone:Start()
+        --If airbase is not neutral      
+        if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
+            local side = string.upper(ab:GetCoalitionName())        
+            local warehouseName = side.."_WAREHOUSE_"..ab:GetName()
+            --Check if we already have a warehouse
+            local warehouse = STATIC:FindByName(warehouseName, false)
+            opsZone:SetDrawZone(false)
+            if( warehouse) then
+                self:W(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
+            else
+                local airbaseCategory = ab:GetCategory() --to be used later for disstinct setup Airbase vs FARP
+                --spawn a warehouse
+                local childZones = self:GetChildZones(ab.AirbaseZone)
+                local childZonesCount = #(childZones)
+                local whspawn = SPAWNSTATIC:NewFromStatic(side.."_WAREHOUSE_TEMPLATE")   
+                local position = ab:GetZone():GetRandomPointVec2()
+                local whSpawnZone = ab.AirbaseZone
+                if(childZonesCount > 0) then
+                    whSpawnZone = childZones[math.random(childZonesCount)]
+                    self:T(string.format("Spawning warehouse on %s in zone %s", ab:GetName(), whSpawnZone:GetName()))
+                else
+                    self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", ab:GetName(), ab:GetName()))
+                end
+                position = whSpawnZone:GetPointVec2()
+                warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
+            end
+            self:PopulateBase(warehouse, ab)
+            --after spawning units set capture only by units?
+            --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
+            opsZone:SetObjectCategories({Object.Category.UNIT})
+            HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
+            self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)            
+
+            -- TESTING --
+            -- local resourceOccupied, resourceTank = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_TANK)
+            -- local attackHelos = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+            -- local infantry = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+            -- HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
+
+            local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+            --local attackMission = helos.mission --AUFTRAG
+            --attackMission:SetMissionAltitude(1000)
+
+            local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+            local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
+            --local transportMision = transportHelo.mission
+            --transportMision:SetAltitude(1000)
+            HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+        end
+
+    end
+end
+
 function HC:Start()
-    local activeAirbases = {}
+
     local basePath = lfs.writedir().."Missions\\havechips\\"
-    if(not self:FileExists(basePath.."airbases.json")) then
+    local filename = "airbases.json"
+    if(not self:FileExists(basePath..filename)) then
         --First mission run in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
         --everything else will be ignored
         self:T("Initializing campaign")
@@ -471,19 +556,29 @@ function HC:Start()
             if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
                 --RED and BLUE bases will be considered as strategic zones, everything else will be ignored
                 local abi = AIRBASEINFO:NewFromAIRBASE(ab, 100)
-                table.insert(activeAirbases, abi:GetTable())
+                table.insert(self.ActiveAirbases, abi:GetTable())
             end
         end
         --save to file
-        HC:SaveTable(activeAirbases, basePath.."airbases.json")
+        HC:SaveTable(self.ActiveAirbases, basePath..filename)
     else
         --Campaign is in progress, we have saved data
         self:T("Loading campaign progress")
-        activeAirbases = HC:LoadTable(basePath.."airbases.json")
+        local success = false
+        success, self.ActiveAirbases = HC:LoadTable(basePath..filename)
+        if(success) then
+            self:T("Table loaded from file "..basePath..filename)
+        else
+            self:W("Could not load table from file "..basePath..filename)
+        end
     end
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
-    
+    self:InitCampaignState()
+end
+
+function HC:EndMission()
+    --ToDo: save state
 end
 
 HC:InitGroupTemplates()
