@@ -378,7 +378,6 @@ function AIRBASEINFO:DrawLabel()
         --HPIndicator = HPIndicator.."_"
     end
     HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
-    env.info(HPIndicator.. " " ..tostring(self.HP))
     self.MarkId = coord:TextToAll(" "..ab:GetName().." \n "..HPIndicator.." \n", coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
@@ -530,49 +529,49 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
             airwing:AddSquadron(squadron)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
-    -- if(ab:GetCategory() == Airbase.Category.AIRDROME) then
-    --     for i=1, #(templates.CAP) do
-    --             local squadron=SQUADRON:New(templates.CAP[i], 3, string.format("%s Fighter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
-    --             squadron:SetGrouping(2) -- Two aircraft per group.
-    --             squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
-    --             squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
-    --             squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-    --             squadron:SetTurnoverTime(10, 0)
-    --             airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
-    --             airwing:AddSquadron(squadron)
-    --     end
-    --     for i=1, #(templates.CAS) do
-    --             local squadron=SQUADRON:New(templates.CAS[i], 3, string.format("%s Attack Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
-    --             squadron:SetGrouping(2) -- Two aircraft per group.
-    --             squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
-    --             squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-    --             squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-    --             squadron:SetTurnoverTime(10, 0)
-    --             airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
-    --             airwing:AddSquadron(squadron)
-    --     end
-    --     for i=1, #(templates.STRIKE) do
-    --             local squadron=SQUADRON:New(templates.STRIKE[i], 3, string.format("%s Strike Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
-    --             squadron:SetGrouping(2) -- Two aircraft per group.
-    --             squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
-    --             squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-    --             squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
-    --             squadron:SetTurnoverTime(10, 0)
-    --             airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
-    --             airwing:AddSquadron(squadron)
-    --     end
-    --         for i=1, #(templates.SEAD) do
-    --             local squadron=SQUADRON:New(templates.SEAD[i], 3, string.format("%s SEAD Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
-    --             squadron:SetGrouping(2) -- Two aircraft per group.
-    --             squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
-    --             squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
-    --             squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
-    --             squadron:SetTurnoverTime(10, 0)
-    --             airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD}) --20 sets of armament
-    --             squadron:SetVerbosity(3)                
-    --             airwing:AddSquadron(squadron)
-    --     end
-    --end    
+    if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+        for i=1, #(templates.CAP) do
+                local squadron=SQUADRON:New(templates.CAP[i], 3, string.format("%s Fighter Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                squadron:SetGrouping(2) -- Two aircraft per group.
+                squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
+                squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTurnoverTime(10, 0)
+                airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
+                airwing:AddSquadron(squadron)
+        end
+        for i=1, #(templates.CAS) do
+                local squadron=SQUADRON:New(templates.CAS[i], 3, string.format("%s Attack Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                squadron:SetGrouping(2) -- Two aircraft per group.
+                squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
+                squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTurnoverTime(10, 0)
+                airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
+                airwing:AddSquadron(squadron)
+        end
+        for i=1, #(templates.STRIKE) do
+                local squadron=SQUADRON:New(templates.STRIKE[i], 3, string.format("%s Strike Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                squadron:SetGrouping(2) -- Two aircraft per group.
+                squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
+                squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
+                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTurnoverTime(10, 0)
+                airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
+                airwing:AddSquadron(squadron)
+        end
+            for i=1, #(templates.SEAD) do
+                local squadron=SQUADRON:New(templates.SEAD[i], 3, string.format("%s SEAD Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
+                squadron:SetGrouping(2) -- Two aircraft per group.
+                squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
+                squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
+                squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetTurnoverTime(10, 0)
+                airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD}) --20 sets of armament
+                squadron:SetVerbosity(3)                
+                airwing:AddSquadron(squadron)
+        end
+    end    
     chief:AddAirwing(airwing) 
 end
 
@@ -715,11 +714,21 @@ function HC:Start()
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
+            opsZone:SetDrawZone(false)
             local staticWarehouse = self:SetupStaticWarehouse(ab)
             HC:PopulateBase(staticWarehouse, ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
             --abi:DrawLabel()
         end
+        HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
+        local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+            --local attackMission = helos.mission --AUFTRAG
+            --attackMission:SetMissionAltitude(1000)
+        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+        local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
+        --local transportMision = transportHelo.mission
+        --transportMision:SetAltitude(1000)
+        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
     end
     --Now that the bases are all set up, set airbase inventories to restrict planes and weapons
     HC:SetupInventory()
@@ -751,7 +760,7 @@ end
 
 
 HC:Start()
-
---HC:InitAirbases()
 --HC.RED.CHIEF:__Start(1)
---HC.BLUE.CHIEF:__Start(1)
+HC.BLUE.CHIEF:__Start(1)
+
+

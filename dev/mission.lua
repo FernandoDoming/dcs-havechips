@@ -87,15 +87,72 @@
 
 --SearchZone( EvaluateFunction, ObjectCategories )
 
-function handleClearRequest(text, coord)
-    local destroyZoneName = string.format("destroy %d", destroyZoneCount)
-    local zoneRadiusToDestroy = ZONE_RADIUS:New(destroyZoneName, coord:GetVec2(), 10000)
-    destroyZoneCount = destroyZoneCount + 1
-    --trigger.action.outText("UNIT(S) on your MAP MARKER succesfully DESTROYED.", 10)
-    local function destroyUnit(unit)
-        unit:Destroy()
-        return true
-    end
+-- function handleClearRequest(text, coord)
+--     local destroyZoneName = string.format("destroy %d", destroyZoneCount)
+--     local zoneRadiusToDestroy = ZONE_RADIUS:New(destroyZoneName, coord:GetVec2(), 10000)
+--     destroyZoneCount = destroyZoneCount + 1
+--     --trigger.action.outText("UNIT(S) on your MAP MARKER succesfully DESTROYED.", 10)
+--     local function destroyUnit(unit)
+--         unit:Destroy()
+--         return true
+--     end
 
-    zoneRadiusToDestroy:SearchZone( destroyUnit , Object.Category.UNIT)
+--     zoneRadiusToDestroy:SearchZone( destroyUnit , Object.Category.UNIT)
+-- end
+
+PERUN = {}
+function PERUN:CleanZone(zoneName)
+        local z = ZONE:FindByName(zoneName)
+        if (not z) then
+            env.info("Zone not found "..zoneName)
+            return
+        end
+        local function destroyObject(obj)
+            env.info("PERUN: killing "..obj:getName())
+            obj:destroy()
+            return true
+        end
+        PERUN:SearchZone(z, destroyObject, {Object.Category.UNIT, Object.Category.STATIC, Object.Category.CARGO})
+end
+
+function PERUN:DestroyUnit(unitName)
+    local unit = UNIT:FindByName(unitName)
+    if (not unit) then
+        env.info("Unit "..unitName.." not found")
+    end
+    unit:Destroy()
+end    
+
+function PERUN:DestroyGroup(groupName)
+    local group = GROUP:FindByName(groupName)
+    if (not group) then
+        env.info("Unit "..groupName.." not found")
+    end
+    group:Destroy(false)
+end  
+
+-- @param #ZONE_RADIUS self
+-- @param ObjectCategories A list of categories, which are members of Object.Category
+-- @param EvaluateFunction
+function PERUN:SearchZone( Zone, EvaluateFunction, ObjectCategories )
+  local ZoneCoord = Zone:GetCoordinate()
+  local ZoneRadius = Zone:GetRadius()
+  local SphereSearch = {
+    id = world.VolumeType.SPHERE,
+      params = {
+      point = ZoneCoord:GetVec3(),
+      radius = ZoneRadius,
+      }
+    }
+    --UNIT    1
+    --WEAPON  2
+    --STATIC  3
+    --BASE    4
+    --SCENERY 5
+    --Cargo   6
+    local function EvaluateZone( obj, val )
+        env.info("Found something!"..obj:getName())
+        return EvaluateFunction( obj )
+    end
+    world.searchObjects( ObjectCategories, SphereSearch, EvaluateZone )
 end
