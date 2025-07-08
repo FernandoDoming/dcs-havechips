@@ -1,33 +1,50 @@
 JSON = loadfile(lfs.writedir().."Missions\\havechips\\lib\\json.lua")()
+
 HC = {
+    VERSION=0.1,
     RED = { 
-        TEMPLATES = {}
+        TEMPLATES = {},
+        INVENTORY_TEMPLATES = {
+            MAIN = nil,
+            FRONTLINE = nil,
+            FARP = nil
+        }
     },
     BLUE = {
-        TEMPLATES = {}        
+        TEMPLATES = {},
+        INVENTORY_TEMPLATES = {
+            MAIN = nil,
+            FRONTLINE = nil,
+            FARP = nil
+        }
     },
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
     ActiveAirbases = {}
 }
 
 --Write trace message to log
+--@param #string message Message text
 function HC:T(message)
     env.info("[HaveChips] "..message)
 end
 
 --Write warning message to log
+--@param #string message Message text
 function HC:W(message)
     env.warning("[HaveChips] "..message)
 end
 
 --Write error message to log
+--@param #string message Message text
 function HC:E(message)
     env.error("[HaveChips] "..message)
 end
 
---Gets all templates for side of missionType (or unit category)
+--Gets all template group names for side of missionType (or unit category), method is used internally
 --currently TEMPLATE_CATEGORIES {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"}
-function HC:GetTemplatesForCategory(side, missionType)    
+--@param #string side "RED" or "BLUE"
+--@param #string missionType Template zone name part. Pattern is <SIDE>_<missionType>_TEMPLATES, see template zones in mission editor, possible values "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"
+function HC:GetTemplateGroupNames(side, missionType)    
     local templates = {}
     --convention: use UPPERCASE for template zones
     local zoneName = string.upper(side.."_"..missionType.."_TEMPLATES")
@@ -50,18 +67,38 @@ function HC:GetTemplatesForCategory(side, missionType)
     return templates
 end  
 
---Initializes the templates for Airwings and platoons
+--Initializes the templates structure for Airwings and platoons
 function HC:InitGroupTemplates()
-    self:T("HC:InitGroupTemplates: Initializing group templates")
+    self:T("Initializing group templates")
     local sides = {"RED", "BLUE"}
     for j=1, #(sides) do        
         for i=1,#(HC.TEMPLATE_CATEGORIES) do
-            self[string.upper(sides[j])].TEMPLATES[HC.TEMPLATE_CATEGORIES[i]] = self:GetTemplatesForCategory(sides[j], HC.TEMPLATE_CATEGORIES[i])
+            self[string.upper(sides[j])].TEMPLATES[HC.TEMPLATE_CATEGORIES[i]] = self:GetTemplateGroupNames(sides[j], HC.TEMPLATE_CATEGORIES[i])
         end  
     end
-    self:T("HC:InitGroupTemplates: done")
+    self:T("Group templates initialized")
 end
 
+--Initializes inventory templates for airbases, frontline airbases and FARPS
+--Inventory templates are defined by static cargo objects with names 
+--<SIDE>_MAIN_INVENTORY for "major" airbases
+--<SIDE>_FRONTLINE_INVENTORY for "frontline" airbases
+--<SIDE>_FARP_INVENTORY for FARPS
+function HC:InitInventoryTemplates()
+    self:T("Initializing inventory templates")
+    HC.RED.INVENTORY_TEMPLATES.MAIN = STATIC:FindByName("RED_MAIN_INVENTORY"):GetStaticStorage()
+    HC.RED.INVENTORY_TEMPLATES.FRONTLINE = STATIC:FindByName("RED_FRONTLINE_INVENTORY"):GetStaticStorage()
+    HC.RED.INVENTORY_TEMPLATES.FARP = STATIC:FindByName("RED_FARP_INVENTORY"):GetStaticStorage()
+    HC.BLUE.INVENTORY_TEMPLATES.MAIN = STATIC:FindByName("BLUE_MAIN_INVENTORY"):GetStaticStorage()
+    HC.BLUE.INVENTORY_TEMPLATES.FRONTLINE = STATIC:FindByName("BLUE_FRONTLINE_INVENTORY"):GetStaticStorage()
+    HC.BLUE.INVENTORY_TEMPLATES.FARP = STATIC:FindByName("BLUE_FARP_INVENTORY"):GetStaticStorage()
+    self:T("Inventory templates initialized")
+end    
+
+--Creates MOOSE CHIEF object
+--@param #string side "RED" or "BLUE"
+--@param #string alias Chief name (optional)
+--@return #CHIEF MOOSE CHIEF object
 function HC:CreateChief(side, alias)
     local RADAR_MIN_HEIGHT = 20 --Minimum flight height to be detected, in meters AGL
     local RADAR_THRESH_HEIGHT = 80 --90% chance to not be detected if flying below RADAR_MIN_HEIGHT
@@ -126,6 +163,9 @@ function HC:CreateChief(side, alias)
     --return chief
 end   
 --Returns a list of zones which are inside specified "parent" zone
+--Function is used to find a pre-determined spawn locations around bases
+--@param #string zone Parent zone name
+--@return #table table of child zones
 function HC:GetChildZones(parent)
     local chilldZones = {}
     for _, zone in pairs(_DATABASE.ZONES) do
@@ -136,6 +176,78 @@ function HC:GetChildZones(parent)
     end
     return chilldZones
 end    
+
+--Checks if file specified by filename path exists
+--@param filename Filename path
+--@return #bool true if file exists
+function HC:FileExists(filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false
+    end
+    local f=io.open(filename, "r")
+    if f~=nil then
+      io.close(f)
+      return true
+    else
+      return false
+    end
+end
+
+--load saved data from file
+--@param filename - filename path to load from
+---@return bool success (true if operation was successful, false otherwise), table - json file data as Lua table
+function HC:LoadTable(filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false, nil
+    end
+    -- Check file name.
+    if filename == nil then
+        self:E("Filename must be specified")
+        return false, nil
+    end
+    
+    local f = io.open(filename, "rb")
+    if(f == nil) then
+        self:E("Could not open file '"..filename.."'")
+        return false, nil
+    end        
+    local content = f:read("*all")
+    f:close()
+    local tbl = assert(JSON.decode(content), "Couldn't decode JSON data from file "..filename)
+    UTILS.TableShow(tbl)
+    return true, tbl
+end
+
+--save lua table to JSON file
+--@return bool true if operation was successful, false otherwise
+function HC:SaveTable(table, filename)
+    --Check io
+    if not io then
+        self:E("ERROR: io not desanitized. Can't save current file.")
+        return false
+    end
+    -- Check file name.
+    if filename == nil then
+        self:E("Filename must be specified")
+        return false
+    end
+    if (table == nil) then
+        self:E("Table is nil")
+        return false
+    end        
+    local json = assert(JSON.encode(table),"Couldn't encode Lua table")
+    local f = assert(io.open(filename, "wb"))
+    if (f == nil) then
+        self:E("File open failed on file "..filename)
+        return false
+    end        
+    f:write(json)
+    f:close()
+end
 
 function HC:SetChiefStrategicZoneBehavior(chief, zone)
     --- Create a resource list of mission types and required assets for the case that the zone is OCCUPIED.
@@ -152,7 +264,7 @@ function HC:SetChiefStrategicZoneBehavior(chief, zone)
     chief:SetStrategicZoneResourceOccupied(zone, ResourceOccupied)
 end    
 
-
+--in testing
 function HC:InitAirbases()
     self:T("HC:InitAirbases()")
     local airbases = AIRBASE.GetAllAirbases()
@@ -215,80 +327,11 @@ function HC:InitAirbases()
     end
 end
 
---load saved data
---returns bool success (true if operation was successful, false otherwise), table - json file data as Lua table
-function HC:LoadTable(filename)
-    --Check io
-    if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
-        return false, nil
-    end
-    -- Check file name.
-    if filename == nil then
-        self:E("Filename must be specified")
-        return false, nil
-    end
-    
-    local f = io.open(filename, "rb")
-    if(f == nil) then
-        self:E("Could not open file '"..filename.."'")
-        return false, nil
-    end        
-    local content = f:read("*all")
-    f:close()
-    local tbl = assert(JSON.decode(content), "Couldn't decode JSON data from file "..filename)
-    UTILS.TableShow(tbl)
-    return true, tbl
-end
-
---save lua table to JSON file
---returns bool true if successful, false otherwise
-function HC:SaveTable(table, filename)
-    --Check io
-    if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
-        return false
-    end
-    -- Check file name.
-    if filename == nil then
-        self:E("Filename must be specified")
-        return false
-    end
-    if (table == nil) then
-        self:E("Table is nil")
-        return false
-    end        
-    local json = assert(JSON.encode(table),"Couldn't encode Lua table")
-    local f = assert(io.open(filename, "wb"))
-    if (f == nil) then
-        self:E("File open failed on file "..filename)
-        return false
-    end        
-    f:write(json)
-    f:close()
-end
-
---Checks if file FileExists
---returns true if file exists
-function HC:FileExists(filename)
-    --Check io
-    if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
-        return false
-    end
-    local f=io.open(filename, "r")
-    if f~=nil then
-      io.close(f)
-      return true
-    else
-      return false
-    end
-end
-
+--This class is used to persist airbase state between server restarts
 AIRBASEINFO = {
     AirbaseID = nil,
     Name = nil,
-    HP = 100,
+    HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL,
     MarkId = nil
 }
@@ -309,7 +352,7 @@ function AIRBASEINFO:DrawLabel()
     local colorText = {1,1,1}
     local textAlpha = 1
     local textSize = 14
-    local ab = AIRBASE:FindByID(self.AirbaseID)
+    local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
     if (self.Coalition == coalition.side.RED) then
         colorFill = {1,0,0}
@@ -362,6 +405,31 @@ function AIRBASEINFO:NewFromTable(table)
     self.__index = self
     return o
 end    
+
+function AIRBASEINFO:IsFrontline()
+    --SET_AIRBASE:FindNearestAirbaseFromPointVec2
+    local ab = AIRBASE:FindByName(self.Name)
+    local coord = ab:GetCoordinate()
+    local enemyside = nil
+    if (ab:GetCoalition() == coalition.side.NEUTRAL) then
+        env.info("Neutral base "..self.Name)
+        return false
+    end        
+    if(ab:GetCoalition() == coalition.side.RED) then
+        enemySide = "blue"
+    else
+        enemySide = "red"
+    end
+    local enemyBases = SET_AIRBASE:New():FilterCoalitions("red"):FilterOnce()
+    enemyBases:ForEachAirbase(
+        function(b)
+            env.info("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
+        end
+    )
+    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
+    local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
+    env.info(string.format("Closest enemy airbase from %s is %s [%d]", self.Name, closestEnemyBase:GetName(), dist))
+end
 
 
 --Creates army brigade and an airwing at specified base and warehouse and provides them to chief
@@ -530,11 +598,17 @@ function HC:InitAirbase(ab, abInfo)
     end
 end
 
+--Sets up airbase inventory, aircraft and weapon availability
+--Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
+function HC:SetupInventory()
+
+end
+
 function HC:ResumeCampaign()
     self:T("InitCampaignState")
     for i=1, #(self.ActiveAirbases) do
         local abInfo = self.ActiveAirbases[i]
-        local ab = AIRBASE:FindByID(abInfo.AirbaseID)
+        local ab = AIRBASE:FindByName(abInfo.Name)
         ab:SetCoalition(abInfo.Coalition)
         local side = string.upper(ab:GetCoalitionName())  
         self:T("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
@@ -618,14 +692,27 @@ function HC:Start()
     end
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
-    self:ResumeCampaign()
+    for i=1, #(self.ActiveAirbases) do
+        local abi = self.ActiveAirbases[i]
+        abi:IsFrontline()
+    end
 end
 
 function HC:EndMission()
     --ToDo: save state
 end
 
+function HC:SaveCampaignState()
+    --ToDo: Save active airbases
+end    
+
+--Periodic resupply of all airbases and FARPs
+function HC:ResupplyTick()
+
+end    
+
 HC:InitGroupTemplates()
+HC:InitInventoryTemplates()
 HC:CreateChief("red", "Zhukov")
 HC:CreateChief("blue", "McArthur")
 HC:Start()
