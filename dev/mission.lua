@@ -85,9 +85,17 @@
 
 
 
-local enemyBases = SET_AIRBASE:New():FilterCoalitions("blue"):FilterOnce()
-    enemyBases:ForEachAirbase(
-        function(b)
-            env.info("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
-        end
-    )
+--SearchZone( EvaluateFunction, ObjectCategories )
+
+function handleClearRequest(text, coord)
+    local destroyZoneName = string.format("destroy %d", destroyZoneCount)
+    local zoneRadiusToDestroy = ZONE_RADIUS:New(destroyZoneName, coord:GetVec2(), 10000)
+    destroyZoneCount = destroyZoneCount + 1
+    --trigger.action.outText("UNIT(S) on your MAP MARKER succesfully DESTROYED.", 10)
+    local function destroyUnit(unit)
+        unit:Destroy()
+        return true
+    end
+
+    zoneRadiusToDestroy:SearchZone( destroyUnit , Object.Category.UNIT)
+end
