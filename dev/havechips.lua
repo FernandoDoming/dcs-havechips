@@ -723,6 +723,9 @@ function HC:Start()
     end
     --Now that the bases are all set up, set airbase inventories to restrict planes and weapons
     HC:SetupInventory()
+    HC.RESUPPLY_TIMER = TIMER:New(HC.ResupplyTick, HC)
+    HC.RESUPPLY_TIMER:Start(5,5)
+    self:T("Startup completed")
 end
 
 function HC:EndMission()
@@ -735,7 +738,14 @@ end
 
 --Periodic resupply of all airbases and FARPs
 function HC:ResupplyTick()
-
+    self:T("Resupply tick triggered")
+    for i=1, #(self.ActiveAirbases) do
+        local abi = self.ActiveAirbases[i]
+        if(abi.HP < 100) then
+            abi.HP = abi.HP + 1
+            abi:DrawLabel()
+        end
+    end        
 end    
 
 
