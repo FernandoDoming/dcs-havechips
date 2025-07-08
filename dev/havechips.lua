@@ -407,7 +407,6 @@ function AIRBASEINFO:NewFromTable(table)
 end    
 
 function AIRBASEINFO:IsFrontline()
-    --SET_AIRBASE:FindNearestAirbaseFromPointVec2
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
     local enemyside = nil
@@ -420,15 +419,16 @@ function AIRBASEINFO:IsFrontline()
     else
         enemySide = "red"
     end
-    local enemyBases = SET_AIRBASE:New():FilterCoalitions("red"):FilterOnce()
-    enemyBases:ForEachAirbase(
-        function(b)
-            env.info("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
-        end
-    )
+    local enemyBases = SET_AIRBASE:New():FilterCoalitions(enemySide):FilterOnce()
+    -- enemyBases:ForEachAirbase(
+    --     function(b)
+    --         env.info("Base in filtered set "..enemySide.." "..b:GetCoalitionName().." "..b:GetName())
+    --     end
+    -- )
     local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
     local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
-    env.info(string.format("Closest enemy airbase from %s is %s [%d]", self.Name, closestEnemyBase:GetName(), dist))
+    --env.info(string.format("Closest enemy airbase from %s is %s %.1d km", self.Name, closestEnemyBase:GetName(), dist/1000))
+    return dist <= 50000
 end
 
 
@@ -694,7 +694,10 @@ function HC:Start()
     --set their coalition and state of combat effectivenes
     for i=1, #(self.ActiveAirbases) do
         local abi = self.ActiveAirbases[i]
-        abi:IsFrontline()
+        local ab = AIRBASE:FindByName(abi.Name)
+        ab:SetCoalition(abi.Coalition)
+        local isFrontline = abi:IsFrontline()
+        local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
     end
 end
 
