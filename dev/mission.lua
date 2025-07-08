@@ -131,6 +131,16 @@ function PERUN:DestroyGroup(groupName)
     group:Destroy(false)
 end  
 
+
+function PERUN:SpawnInZone(zoneName, Coalition)
+    local z = ZONE:FindByName(zoneName)
+    if(not z) then
+        env.info("Zone not found "..zoneName)
+        return
+    end
+    local spawn = SPAWN:New
+end    
+
 -- @param #ZONE_RADIUS self
 -- @param ObjectCategories A list of categories, which are members of Object.Category
 -- @param EvaluateFunction
