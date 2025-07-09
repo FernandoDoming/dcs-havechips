@@ -85,10 +85,71 @@ end
 
 
 
+function ZoneCommander:MakeZoneBlue()
+	if not self.active or self.wasBlue then return
+	end
+    if self.active and not self.wasBlue then
+        BASE:I("Making this zone Blue: " .. self.zone)
+        local unitsInZone = coalition.getGroups(1)
+        for _, group in ipairs(unitsInZone) do
+            local groupUnits = group:getUnits()
+            for _, unit in ipairs(groupUnits) do
+                if Utils.isInZone(unit, self.zone) then
+                    unit:destroy()
+                end
+            end
+        end
+        timer.scheduleFunction(function()
+            self:capture(2,true)
+            BASE:I("Zone captured by Blue: " .. self.zone)
+			self.wasBlue = true
+        end, nil, timer.getTime() + 12)
+    else
+        BASE:I("Zone is either inactive or not controlled by the blue side, no action taken.")
+    end
+end
 
 
+function refreshPlayers()
+    local b = coalition.getPlayers(coalition.side.BLUE)
+    local current = {}
+    for _, unit in ipairs(b) do
+        local nm = unit:getPlayerName()
+        if nm then
+            local desc = unit:getDesc()
+            if desc and desc.category == Unit.Category.AIRPLANE then
+				if unit:getTypeName() ~= "A-10C_2" and unit:getTypeName() ~= "Hercules" and unit:getTypeName() ~= "A-10A" and unit:getTypeName() ~= "AV8BNA" then
+					current[nm] = true
+				end
+            end
+        end
+    end
+    for storedName in pairs(playerList) do
+        if not current[storedName] then
+            playerList[storedName] = nil
+        end
+    end
+    for newName in pairs(current) do
+        playerList[newName] = true
+    end
+end
 
 
+    local auftragstatic = AUFTRAG:NewBAI(setStatic, 25000)
+	auftrag:SetWeaponExpend(AI.Task.WeaponExpend.ONE)
+	auftragstatic:SetEngageAsGroup(false)
+	auftragstatic:SetMissionSpeed(600)
+	casGroup:AddMission(auftragstatic)
+	function auftragstatic:OnAfterExecuting(From, Event, To)
+		casGroup:SwitchROE(2)
+		auftragstatic:SetFormation(131075)
+		auftragstatic:SetMissionSpeed(380)
+
+
+            if unit:HasAttribute("SAM TR") or unit:HasAttribute("SAM SR") or unit:HasAttribute("SR SAM") then
+                    decoyTargets:AddUnit(unit)
+                end
+            end
 
 
 
