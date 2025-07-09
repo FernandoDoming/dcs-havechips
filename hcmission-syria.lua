@@ -1,7 +1,6 @@
 --Initialization script
+env.info("Loading script "..lfs.writedir().."Missions/havechips/dev/havechips.lua")
 dofile(lfs.writedir().."Missions/havechips/dev/havechips.lua")
-
-
 env.info("Running mission")
 
 

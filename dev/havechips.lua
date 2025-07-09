@@ -20,7 +20,8 @@ HC = {
     },
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
     ActiveAirbases = {},
-    RESUPPLY_TIMER = nil
+    RESUPPLY_TIMER = nil,
+    AIRBASE_LABELS = {}
 
 }
 
@@ -81,6 +82,29 @@ function HC:InitGroupTemplates()
     self:T("Group templates initialized")
 end
 
+function HC:IsFrontlineAirbase(airbase)
+    local FRONTLINE_DISTANCE = 50000 --distance in meters, if an enemy airbase or farp is at or closer than FRONTLINE_DISTANCE, airbase is considered a frontline airbase
+    local coord = airbase:GetCoordinate()
+    local enemySide = nil
+    if (airbase:GetCoalition() == coalition.side.NEUTRAL) then
+        return false
+    end        
+    if(airbase:GetCoalition() == coalition.side.RED) then
+        enemySide = "blue"
+    else
+        enemySide = "red"
+    end
+    local enemyBases = SET_AIRBASE:New():FilterCoalitions(enemySide):FilterOnce()
+    -- enemyBases:ForEachAirbase(
+    --     function(b)
+    --         env.info("Base in filtered set "..enemySide.." "..b:GetCoalitionName().." "..b:GetName())
+    --     end
+    -- )
+    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
+    local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
+    return dist <= 50000
+end
+
 --Initializes inventory templates for airbases, frontline airbases and FARPS
 --Inventory templates are defined by static cargo objects with names 
 --<SIDE>_MAIN_INVENTORY for "major" airbases
@@ -114,37 +138,37 @@ function HC:CreateChief(side, alias)
     local chief = CHIEF:New(string.lower(side), agents, alias)
 
     --Limit the number of concurrent missions (although it doesn't seem to work in current MOOSE build)
-    chief:SetLimitMission(1, AUFTRAG.Type.CAP)
-    chief:SetLimitMission(2, AUFTRAG.Type.GROUNDATTACK)
-    chief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
-    chief:SetLimitMission(2, AUFTRAG.Type.CAS)
-    chief:SetLimitMission(2, AUFTRAG.Type.BAI)
-    chief:SetLimitMission(1, AUFTRAG.Type.STRIKE)
-    chief:SetLimitMission(2, AUFTRAG.Type.BOMBRUNWAY)
-    chief:SetLimitMission(2, AUFTRAG.Type.CASENHANCED)
-    chief:SetLimitMission(1, AUFTRAG.Type.SEAD)
-    chief:SetLimitMission(2, AUFTRAG.Type.ARMORATTACK)
-    chief:SetLimitMission(2, AUFTRAG.Type.ARMOREDGUARD)
-    chief:SetLimitMission(2, AUFTRAG.Type.ONGUARD)
-    chief:SetLimitMission(2, AUFTRAG.Type.PATROLZONE)
-    chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
-    chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
-    chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
+    -- chief:SetLimitMission(1, AUFTRAG.Type.CAP)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.GROUNDATTACK)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.CAS)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.BAI)
+    -- chief:SetLimitMission(1, AUFTRAG.Type.STRIKE)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.BOMBRUNWAY)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.CASENHANCED)
+    -- chief:SetLimitMission(1, AUFTRAG.Type.SEAD)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.ARMORATTACK)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.ARMOREDGUARD)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.ONGUARD)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.PATROLZONE)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
+    -- chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
+    -- chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
-    chief:SetVerbosity(4)
+    chief:SetVerbosity(5)
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
-        self:T("Zone lost")
+        HC:W("Zone is now lost")
     end
 
     function chief:OnAfterZoneCaptured(from, event, to, opszone)
-        self:T("Zone captured")
+        HC:W("Zone is now captured")
     end
 
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
-        self:T("Zone empty")
+        HC:W("Zone is now empty")
         --zone neutralized, send troops to capture it
         --possible scenario
         --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
@@ -152,12 +176,12 @@ function HC:CreateChief(side, alias)
     
 
     function chief:OnAfterMissionAssign(From, Event, To, Mission, Legions)
-        self:T("OnAfterMissionAssign")
+        HC:W("OnAfterMissionAssign")
         --mission:SetRoe(ENUMS.ROE.)
     end
 
     function chief:OnAfterOpsOnMission(From, Event, To, OpsGroup, Mission)
-        self:T("OnAfterOpsOnMission")
+        HC:W("OnAfterOpsOnMission")
         --mission:SetRoe(ENUMS.ROE.)
     end
 
@@ -251,83 +275,31 @@ function HC:SaveTable(table, filename)
     f:close()
 end
 
+--Sets CHIEF response to strategic zone empty and occupied
+--@param #CHIEF chief
+--@param #OPSZONE strategic zone
 function HC:SetChiefStrategicZoneBehavior(chief, zone)
     --- Create a resource list of mission types and required assets for the case that the zone is OCCUPIED.
-    local ResourceOccupied, resourcesTanks = chief:CreateResource(AUFTRAG.Type.ONGUARD, 0, 1, GROUP.Attribute.GROUND_TANK)
-    chief:AddToResource(ResourceOccupied, AUFTRAG.Type.CASENHANCED, 0, 1)
-    local ResourceEmpty, resourceInf=chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
+    -- local ResourceOccupied, resourcesTanks = chief:CreateResource(AUFTRAG.Type.ONGUARD, 0, 1, GROUP.Attribute.GROUND_TANK)
+    -- chief:AddToResource(ResourceOccupied, AUFTRAG.Type.CASENHANCED, 0, 1)
+    -- local ResourceEmpty, resourceInf=chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
     
-    -- Add a transport to the infantry resource. We want at least one and up to two transport helicopters.
-    chief:AddTransportToResource(resourceInf, 1, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
-    --chief:AddTransportToResource(resourceInf, 1, 1, AUFTRAG.Type.TROOPTRANSPORT)
+    -- -- Add a transport to the infantry resource. We want at least one and up to two transport helicopters.
+    -- chief:AddTransportToResource(resourceInf, 1, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
-    -- Add stratetic zone with customized reaction.
-    chief:SetStrategicZoneResourceEmpty(zone, ResourceEmpty)
-    chief:SetStrategicZoneResourceOccupied(zone, ResourceOccupied)
+    -- -- Add stratetic zone with customized reaction.
+    -- chief:SetStrategicZoneResourceEmpty(zone, ResourceEmpty)
+    -- chief:SetStrategicZoneResourceOccupied(zone, ResourceOccupied)
+
+        --local resourceOccupied, helos = chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+        local resourceOccupied = {}
+        local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+        local transportHelo = chief:AddTransportToResource(emptyInfantry, 2, 4, GROUP.Attribute.AIR_TRANSPORTHELO)
+        chief:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_APC)
+        chief:SetStrategicZoneResourceEmpty(zone, resourceEmpty)
+        chief:SetStrategicZoneResourceOccupied(zone, resourceOccupied)
+
 end    
-
---in testing
--- function HC:InitAirbases()
---     self:T("HC:InitAirbases()")
---     local airbases = AIRBASE.GetAllAirbases()
---     for i=1, #(airbases) do
---         local ab = airbases[i]
---         local side = string.upper(ab:GetCoalitionName())  
---         self:T("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
---         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
---         --opsZone:Start()
---         --If airbase is not neutral      
---         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases
---             local side = string.upper(ab:GetCoalitionName())        
---             local warehouseName = side.."_WAREHOUSE_"..ab:GetName()
---             --Check if we already have a warehouse
---             local warehouse = STATIC:FindByName(warehouseName, false)
---             opsZone:SetDrawZone(false)
---             if( warehouse) then
---                 self:W(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
---             else
---                 local airbaseCategory = ab:GetCategory() --to be used later for disstinct setup Airbase vs FARP
---                 --spawn a warehouse
---                 local childZones = self:GetChildZones(ab.AirbaseZone)
---                 local childZonesCount = #(childZones)
---                 local whspawn = SPAWNSTATIC:NewFromStatic(side.."_WAREHOUSE_TEMPLATE")   
---                 local position = ab:GetZone():GetRandomPointVec2()
---                 local whSpawnZone = ab.AirbaseZone
---                 if(childZonesCount > 0) then
---                     whSpawnZone = childZones[math.random(childZonesCount)]
---                     self:T(string.format("Spawning warehouse on %s in zone %s", ab:GetName(), whSpawnZone:GetName()))
---                 else
---                     self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", ab:GetName(), ab:GetName()))
---                 end
---                 position = whSpawnZone:GetPointVec2()
---                 warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
---             end
---             self:PopulateBase(warehouse, ab)
---             --after spawning units set capture only by units?
---             --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
---             opsZone:SetObjectCategories({Object.Category.UNIT})
---             HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
---             self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)            
-
---             -- TESTING --
---             -- local resourceOccupied, resourceTank = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_TANK)
---             -- local attackHelos = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
---             -- local infantry = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
---             -- HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
-
---             local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
---             --local attackMission = helos.mission --AUFTRAG
---             --attackMission:SetMissionAltitude(1000)
-
---             local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
---             local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
---             --local transportMision = transportHelo.mission
---             --transportMision:SetAltitude(1000)
---             HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
---         end
-
---     end
--- end
 
 --This class is used to persist airbase state between server restarts
 AIRBASEINFO = {
@@ -607,8 +579,45 @@ end
 
 --Sets up airbase inventory, aircraft and weapon availability
 --Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
-function HC:SetupInventory()
+--@param 
+function HC:SetupAirbaseInventory(airbase)
+    self:T("Seting up inventory for "..airbase:GetName())
+    local targetStorage = STORAGE:FindByName(airbase:GetName())
+    local sourceStorage = nil
+    local SIDE = string.upper(airbase:GetCoalitionName())
+    if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
+        sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FARP
+    elseif (airbase:GetCategory() == Airbase.Category.AIRDROME) then
+        if(self:IsFrontlineAirbase(airbase)) then
+            sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FRONTLINE
+        else
+            sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.MAIN
+        end            
+    else
+        self:W("Unknown airbase category ")
+        return
+    end
+    local sourceAircraft, _, sourceWeapons = sourceStorage:GetInventory()
 
+    if(targetStorage) then
+        local aircraft, _, weapons = targetStorage:GetInventory()
+        --Clear everything first
+        --Clear aircraft
+        for name,_ in pairs(aircraft) do
+            targetStorage:SetItem(name,0)
+        end
+        --Clear weapons
+        for name,_ in pairs(weapons) do
+            targetStorage:SetItem(name,0)
+        end
+        --Fill storage from source storage template
+        for name,v in pairs(sourceAircraft) do
+            targetStorage:SetItem(name, v)
+        end
+        for name,v in pairs(sourceWeapons) do
+            targetStorage:SetItem(name, v)
+        end        
+    end
 end
 
 function HC:ResumeCampaign()
@@ -712,6 +721,8 @@ function HC:Start()
         ab:SetCoalition(abi.Coalition)
         local isFrontline = abi:IsFrontline()
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
+        --setup base available airframes and weapons based on templates
+        self:SetupAirbaseInventory(ab)
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
             opsZone:SetDrawZone(false)
@@ -720,18 +731,21 @@ function HC:Start()
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
             --abi:DrawLabel()
         end
+        ab:SetAutoCaptureON()
         HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
+        HC:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)
+        --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
+        --HC:SetChiefStrategicZoneBehavior(HC.BLUE.CHIEF, opsZone)
+
         local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-            --local attackMission = helos.mission --AUFTRAG
-            --attackMission:SetMissionAltitude(1000)
+        HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+
         local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
+        HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
-        --local transportMision = transportHelo.mission
-        --transportMision:SetAltitude(1000)
         HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+        opsZone:Start()
     end
-    --Now that the bases are all set up, set airbase inventories to restrict planes and weapons
-    HC:SetupInventory()
     HC.RESUPPLY_TIMER = TIMER:New(HC.ResupplyTick, HC)
     HC.RESUPPLY_TIMER:Start(5,5)
     self:T("Startup completed")
@@ -750,10 +764,15 @@ function HC:ResupplyTick()
     self:T("Resupply tick triggered")
     for i=1, #(self.ActiveAirbases) do
         local abi = self.ActiveAirbases[i]
+        local ab = AIRBASE:FindByName(abi.Name)
+        local opsZone = OPSZONE:FindByName(abi.Name)
+        self:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
+        abi.Coalition = ab:GetCoalition()
         if(abi.HP < 100) then
             abi.HP = abi.HP + 1
             abi:DrawLabel()
         end
+
     end        
 end    
 

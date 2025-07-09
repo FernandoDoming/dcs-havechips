@@ -100,7 +100,9 @@
 --     zoneRadiusToDestroy:SearchZone( destroyUnit , Object.Category.UNIT)
 -- end
 
-PERUN = {}
+PERUN = {
+    CurrentSuffix = 1
+}
 function PERUN:CleanZone(zoneName)
         local z = ZONE:FindByName(zoneName)
         if (not z) then
@@ -138,7 +140,9 @@ function PERUN:SpawnInZone(zoneName, Coalition)
         env.info("Zone not found "..zoneName)
         return
     end
-    local spawn = SPAWN:New
+    local spawn = SPAWN:NewWithAlias("PERUN_"..string.upper(Coalition), string.format("PERUN-%d", PERUN.CurrentSuffix))
+    PERUN.CurrentSuffix = PERUN.CurrentSuffix +1
+    spawn:SpawnInZone(z, true)
 end    
 
 -- @param #ZONE_RADIUS self
