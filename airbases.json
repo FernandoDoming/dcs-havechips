@@ -1,110 +1,132 @@
 [
     {
-        "Coalition": 1,
-        "Name": "Marj Ruhayyil",
-        "AirbaseID": 23,
-        "HP": 5
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Kuweires"
     },
     {
         "Coalition": 1,
-        "Name": "Rayak",
-        "AirbaseID": 32,
-        "HP": 10
-    },
-    {
-        "Coalition": 1,
-        "Name": "Deir ez-Zor",
-        "AirbaseID": 42,
-        "HP": 20
+        "HP": 100,
+        "Name": "Marj Ruhayyil"
     },
     {
         "Coalition": 2,
-        "Name": "FARP Victory",
-        "AirbaseID": 109,
-        "HP": 25
-    },
-    {
-        "Coalition": 1,
-        "Name": "Palmyra",
-        "AirbaseID": 28,
-        "HP": 30
+        "HP": 100,
+        "Name": "Incirlik"
     },
     {
         "Coalition": 2,
-        "Name": "Hama",
-        "AirbaseID": 14,
-        "HP": 35
-    },
-    {
-        "Coalition": 1,
-        "Name": "Taftanaz",
-        "AirbaseID": 38,
-        "HP": 40
-    },
-    {
-        "Coalition": 1,
-        "Name": "Damascus",
-        "AirbaseID": 7,
-        "HP": 45
-    },
-    {
-        "Coalition": 1,
-        "Name": "Tiyas",
-        "AirbaseID": 39,
-        "HP": 50
-    },
-    {
-        "Coalition": 1,
-        "Name": "Al Qusayr",
-        "AirbaseID": 3,
-        "HP": 55
-    },
-    {
-        "Coalition": 1,
-        "Name": "Mezzeh",
-        "AirbaseID": 25,
-        "HP": 60
-    },
-    {
-        "Coalition": 1,
-        "Name": "Sayqal",
-        "AirbaseID": 35,
-        "HP": 65
+        "HP": 100,
+        "Name": "Aleppo"
     },
     {
         "Coalition": 2,
-        "Name": "Abu al-Duhur",
-        "AirbaseID": 1,
-        "HP": 70
+        "HP": 100,
+        "Name": "Hatay"
     },
     {
         "Coalition": 1,
-        "Name": "Shayrat",
-        "AirbaseID": 36,
-        "HP": 75
+        "HP": 100,
+        "Name": "Rayak"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Gaziantep"
     },
     {
         "Coalition": 1,
-        "Name": "Bassel Al-Assad",
-        "AirbaseID": 21,
-        "HP": 80
+        "HP": 100,
+        "Name": "Deir ez-Zor"
     },
     {
         "Coalition": 1,
-        "Name": "FARP Pobeda",
-        "AirbaseID": 112,
-        "HP": 85
+        "HP": 100,
+        "Name": "Palmyra"
     },
     {
         "Coalition": 1,
-        "Name": "Rene Mouawad",
-        "AirbaseID": 33,
-        "HP": 90
+        "HP": 100,
+        "Name": "Hama"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Taftanaz"
     },
     {
         "Coalition": 1,
-        "Name": "An Nasiriyah",
-        "AirbaseID": 4,
-        "HP": 100
+        "HP": 100,
+        "Name": "Damascus"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Wujah Al Hajar"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "FARP Victory"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Tiyas"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "FARP Pobeda"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Mezzeh"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Sayqal"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Abu al-Duhur"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Shayrat"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Bassel Al-Assad"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Al Qusayr"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Tabqa"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "Rene Mouawad"
+    },
+    {
+        "Coalition": 1,
+        "HP": 100,
+        "Name": "An Nasiriyah"
+    },
+    {
+        "Coalition": 2,
+        "HP": 100,
+        "Name": "Minakh"
     }
 ]

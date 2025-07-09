@@ -82,6 +82,8 @@ function HC:InitGroupTemplates()
     self:T("Group templates initialized")
 end
 
+--Checks if an airbase is close to frontline
+--@param airbase #AIRBASE Airbase to check
 function HC:IsFrontlineAirbase(airbase)
     local FRONTLINE_DISTANCE = 50000 --distance in meters, if an enemy airbase or farp is at or closer than FRONTLINE_DISTANCE, airbase is considered a frontline airbase
     local coord = airbase:GetCoordinate()
@@ -138,22 +140,22 @@ function HC:CreateChief(side, alias)
     local chief = CHIEF:New(string.lower(side), agents, alias)
 
     --Limit the number of concurrent missions (although it doesn't seem to work in current MOOSE build)
-    -- chief:SetLimitMission(1, AUFTRAG.Type.CAP)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.GROUNDATTACK)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.CAS)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.BAI)
-    -- chief:SetLimitMission(1, AUFTRAG.Type.STRIKE)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.BOMBRUNWAY)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.CASENHANCED)
-    -- chief:SetLimitMission(1, AUFTRAG.Type.SEAD)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.ARMORATTACK)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.ARMOREDGUARD)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.ONGUARD)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.PATROLZONE)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
-    -- chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
-    -- chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
+    chief:SetLimitMission(1, AUFTRAG.Type.CAP)
+    chief:SetLimitMission(2, AUFTRAG.Type.GROUNDATTACK)
+    chief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
+    chief:SetLimitMission(2, AUFTRAG.Type.CAS)
+    chief:SetLimitMission(2, AUFTRAG.Type.BAI)
+    chief:SetLimitMission(1, AUFTRAG.Type.STRIKE)
+    chief:SetLimitMission(2, AUFTRAG.Type.BOMBRUNWAY)
+    chief:SetLimitMission(2, AUFTRAG.Type.CASENHANCED)
+    chief:SetLimitMission(1, AUFTRAG.Type.SEAD)
+    chief:SetLimitMission(2, AUFTRAG.Type.ARMORATTACK)
+    chief:SetLimitMission(2, AUFTRAG.Type.ARMOREDGUARD)
+    chief:SetLimitMission(2, AUFTRAG.Type.ONGUARD)
+    chief:SetLimitMission(2, AUFTRAG.Type.PATROLZONE)
+    chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
+    chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
+    chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
@@ -303,7 +305,6 @@ end
 
 --This class is used to persist airbase state between server restarts
 AIRBASEINFO = {
-    AirbaseID = nil,
     Name = nil,
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL,
@@ -312,7 +313,6 @@ AIRBASEINFO = {
 
 function AIRBASEINFO:GetTable()
     return {
-        AirbaseID = self.AirbaseID,
         Name = self.Name,
         HP = self.HP,
         Coalition = self.Coalition,
@@ -321,20 +321,42 @@ function AIRBASEINFO:GetTable()
 end
 
 function AIRBASEINFO:DrawLabel()
+    local BLUE_COLOR_FARP = {0.2,0.2,1}
+    local BLUE_COLOR_AIRBASE = {0,0,1}
+    local RED_COLOR_FARP = {1,0.2,0.2}
+    local RED_COLOR_AIRBASE = {0.8,0,0}
+    local COLOR_MAIN_BASE_TEXT = {1,1,1}
+    local COLOR_FARP_FRONTLINE_TEXT = {1,1,1}
     local colorFill = {1,0,0}
-    local fillAlpha = 0.5
+    local fillAlpha = 0.85
     local colorText = {1,1,1}
     local textAlpha = 1
     local textSize = 14
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
-    if (self.Coalition == coalition.side.RED) then
-        colorFill = {1,0,0}
+    if(not HC:IsFrontlineAirbase(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+        colorText = COLOR_MAIN_BASE_TEXT
+    else
+        colorText = COLOR_FARP_FRONTLINE_TEXT
+    end
+    if (ab:GetCoalition() == coalition.side.RED) then
+        if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+            colorFill = RED_COLOR_AIRBASE
+        else
+            colorFill = RED_COLOR_FARP
+        end
     elseif (self.Coalition == coalition.side.BLUE) then
-        colorFill = {0,0,1}
+        if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+            colorFill = BLUE_COLOR_AIRBASE
+        else
+            colorFill = BLUE_COLOR_FARP
+        end
     else
         colorFill = {1,1,1}
         colorText = {0.2,0.2,0.2}
+    end
+    if(not HC:IsFrontlineAirbase(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+        colorText = {1, 1,0.5}
     end
     if(self.MarkId ~= nil) then
         --env.info("Removing mark "..self.MarkId)
@@ -357,7 +379,6 @@ end
 --hp - airbase state 0-100 with 100 being 100% operational
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     local o = {}
-    o.AirbaseID = airbase.AirbaseID
     o.Name = airbase:GetName()
     o.HP = hp or 100
     o.Coalition = airbase:GetCoalition()
@@ -369,7 +390,6 @@ end
 
 function AIRBASEINFO:NewFromTable(table)
     local o = {}
-    o.AirbaseID = table.AirbaseID
     o.Name = table.Name
     o.HP = table.HP
     o.Coalition = table.Coalition
@@ -383,27 +403,7 @@ end
 --@return #bool true if base is close to front line
 function AIRBASEINFO:IsFrontline()
     local ab = AIRBASE:FindByName(self.Name)
-    local coord = ab:GetCoordinate()
-    local enemyside = nil
-    if (ab:GetCoalition() == coalition.side.NEUTRAL) then
-        env.info("Neutral base "..self.Name)
-        return false
-    end        
-    if(ab:GetCoalition() == coalition.side.RED) then
-        enemySide = "blue"
-    else
-        enemySide = "red"
-    end
-    local enemyBases = SET_AIRBASE:New():FilterCoalitions(enemySide):FilterOnce()
-    -- enemyBases:ForEachAirbase(
-    --     function(b)
-    --         env.info("Base in filtered set "..enemySide.." "..b:GetCoalitionName().." "..b:GetName())
-    --     end
-    -- )
-    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
-    local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
-    --env.info(string.format("Closest enemy airbase from %s is %s %.1d km", self.Name, closestEnemyBase:GetName(), dist/1000))
-    return dist <= 50000
+    return HC:IsFrontlineAirbase(ab)
 end
 
 
@@ -548,28 +548,28 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
 end
 
 --Adds static warehouse to airbase (required by MOOSE)
---@param #AIRBASE ab - MOOSE airbase
+--@param #AIRBASE airbase - MOOSE airbase
 --@param AIRBASEINFO abInfo - extended airbase info
-function HC:SetupStaticWarehouse(ab)
+function HC:SetupStaticWarehouse(airbase)
     --ToDo: clear zone area
-    local side = string.upper(ab:GetCoalitionName())
-    local warehouseName = side.."_WAREHOUSE_"..ab:GetName()
+    local side = string.upper(airbase:GetCoalitionName())
+    local warehouseName = side.."_WAREHOUSE_"..airbase:GetName()
     --Check if we already have a warehouse
     local warehouse = STATIC:FindByName(warehouseName, false)
     if( warehouse) then
-        self:W(string.format("Warehouse %s on %s already exists!", warehouseName, ab:GetName()))
+        self:W(string.format("Warehouse %s on %s already exists!", warehouseName, airbase:GetName()))
     else
         --spawn a warehouse
-        local childZones = self:GetChildZones(ab.AirbaseZone)
+        local childZones = self:GetChildZones(airbase.AirbaseZone)
         local childZonesCount = #(childZones)
         local whspawn = SPAWNSTATIC:NewFromStatic(side.."_WAREHOUSE_TEMPLATE")   
-        local position = ab:GetZone():GetRandomPointVec2()
-        local whSpawnZone = ab.AirbaseZone
+        local position = airbase:GetZone():GetRandomPointVec2()
+        local whSpawnZone = airbase.AirbaseZone
         if(childZonesCount > 0) then
             whSpawnZone = childZones[math.random(childZonesCount)]
-            self:T(string.format("Spawning warehouse on %s in zone %s", ab:GetName(), whSpawnZone:GetName()))
+            self:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), whSpawnZone:GetName()))
         else
-            self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", ab:GetName(), ab:GetName()))
+            self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", airbaseab:GetName(), aairbaseb:GetName()))
         end
         position = whSpawnZone:GetPointVec2()
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
@@ -579,7 +579,7 @@ end
 
 --Sets up airbase inventory, aircraft and weapon availability
 --Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
---@param 
+--@param #AIRBASE airbase to set up
 function HC:SetupAirbaseInventory(airbase)
     self:T("Seting up inventory for "..airbase:GetName())
     local targetStorage = STORAGE:FindByName(airbase:GetName())
@@ -617,47 +617,6 @@ function HC:SetupAirbaseInventory(airbase)
         for name,v in pairs(sourceWeapons) do
             targetStorage:SetItem(name, v)
         end        
-    end
-end
-
-function HC:ResumeCampaign()
-    self:T("InitCampaignState")
-    for i=1, #(self.ActiveAirbases) do
-        local abInfo = self.ActiveAirbases[i]
-        local ab = AIRBASE:FindByName(abInfo.Name)
-        ab:SetCoalition(abInfo.Coalition)
-        local side = string.upper(ab:GetCoalitionName())  
-        self:T("Initializing base "..ab:GetName()..", coalition "..ab:GetCoalitionName()..", category "..ab:GetCategoryName())
-        abInfo:DrawLabel()
-        local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
-        --opsZone:Start()
-        --If airbase is not neutral      
-        if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then --do not place warehouses on neutral bases      
-            self:InitAirbase(ab, abInfo)
-            opsZone:SetDrawZone(false)
-            --after spawning units set capture only by units?
-            --opsZone:SetObjectCategories({Object.Category.UNIT, Object.Category.STATIC})
-            opsZone:SetObjectCategories({Object.Category.UNIT})
-            HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
-            self:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)            
-
-            -- TESTING --
-            -- local resourceOccupied, resourceTank = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_TANK)
-            -- local attackHelos = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-            -- local infantry = HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-            -- HC.BLUE.CHIEF:AddTransportToResource(infantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
-
-            local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-            --local attackMission = helos.mission --AUFTRAG
-            --attackMission:SetMissionAltitude(1000)
-
-            local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-            local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
-            --local transportMision = transportHelo.mission
-            --transportMision:SetAltitude(1000)
-            HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
-        end
-
     end
 end
 
@@ -719,11 +678,12 @@ function HC:Start()
         local abi = self.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
         ab:SetCoalition(abi.Coalition)
-        local isFrontline = abi:IsFrontline()
+        local isFrontline = self:IsFrontlineAirbase(ab)
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
         --setup base available airframes and weapons based on templates
         self:SetupAirbaseInventory(ab)
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
+        opsZone:SetMarkZone(false)
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
             opsZone:SetDrawZone(false)
             local staticWarehouse = self:SetupStaticWarehouse(ab)
@@ -770,9 +730,8 @@ function HC:ResupplyTick()
         abi.Coalition = ab:GetCoalition()
         if(abi.HP < 100) then
             abi.HP = abi.HP + 1
-            abi:DrawLabel()
         end
-
+        abi:DrawLabel()
     end        
 end    
 
