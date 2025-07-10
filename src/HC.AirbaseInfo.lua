@@ -68,7 +68,7 @@ function AIRBASEINFO:DrawLabel()
         --HPIndicator = HPIndicator.."_"
     end
     --HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
-    self.MarkId = coord:TextToAll(string.format(" %s \n%s %.1d %% \n ", ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    self.MarkId = coord:TextToAll(string.format(" %s \n %s %.1d %% \n ", ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --airbase - MOOSE AIRBASE object

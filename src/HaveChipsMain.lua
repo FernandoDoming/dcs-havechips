@@ -602,7 +602,7 @@ function HC:Start()
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
             --abi:DrawLabel()
         end
-        ab:SetAutoCaptureON()
+        ab:SetAutoCaptureOFF()
         HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
         HC:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)
 
@@ -635,6 +635,7 @@ end
 
 function HC:OnZoneEmpty(From, Event, To, opsZone)
     env.warning("*************** ZONE ".."".." IS EMPTY ******************")
+    AIRBASE:FindByName(opsZone:GetName()):SetCoalition(coalition.side.NEUTRAL)
 end
 
 function HC:EndMission()
@@ -665,24 +666,13 @@ function HC:AirbaseResupply(resupplyPercent)
 end    
 
 function HC:OnShortTick()
-    --This will go in long tick!
-    local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
-    HC:AirbaseResupply(resupplyPercent)    
+   
 end
 
 function HC:OnLongTick()
-    self:T("Resupply tick triggered")
-    for i=1, #(self.ActiveAirbases) do
-        local abi = self.ActiveAirbases[i]
-        local ab = AIRBASE:FindByName(abi.Name)
-        local opsZone = OPSZONE:FindByName(abi.Name)
-        --self:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
-        abi.Coalition = ab:GetCoalition()
-        if(abi.HP < 100) then
-            abi.HP = abi.HP + 1
-        end
-        abi:DrawLabel()
-    end        
+    --This will go in long tick!
+    local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
+    HC:AirbaseResupply(resupplyPercent) 
 end
 
 
