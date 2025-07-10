@@ -709,7 +709,7 @@ function HC:Start()
         HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
         --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
         --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
-        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceEmpty, resourceEmpty)
+        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
         --opsZone:Start()
     end
     HC.RESUPPLY_TIMER = TIMER:New(HC.ResupplyTick, HC)
