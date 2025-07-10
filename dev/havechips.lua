@@ -436,17 +436,17 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
     --Ground units
     local brigade=BRIGADE:New(warehouse:GetName(), side.." brigade "..ab:GetName())
     for i=1, #(templates.LIGHT_INFANTRY) do
-        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 5, string.format("%s Infantry %d %s", side, i, ab:GetName()))
+        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 4, string.format("%s Infantry %d %s", side, i, ab:GetName()))
         platoon:SetGrouping(4)
-        platoon:AddMissionCapability({AUFTRAG.Type.CONQUER, AUFTRAG.Type.CAPTUREZONE, AUFTRAG.Type.ONGURAD}, 70)
-        platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
-        platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
+        platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CAPTUREZONE, AUFTRAG.Type.ONGURAD}, 70)
+        -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
+        -- platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
         platoon:SetAttribute(GROUP.Attribute.GROUND_INFANTRY)
-        platoon:SetMissionRange(25)
+        --platoon:SetMissionRange(25)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.MECHANIZED) do
-        local platoon = PLATOON:New(templates.MECHANIZED[i], 5, string.format("%s Mechanized inf %d %s", side,i, ab:GetName()))
+        local platoon = PLATOON:New(templates.MECHANIZED[i], 4, string.format("%s Mechanized inf %d %s", side,i, ab:GetName()))
         platoon:SetGrouping(4)
         platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
@@ -455,7 +455,7 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.TANK) do
-        local platoon = PLATOON:New(templates.TANK[i], 5, string.format("%s Tank %d %s", side, i, ab:GetName()))
+        local platoon = PLATOON:New(templates.TANK[i], 4, string.format("%s Tank %d %s", side, i, ab:GetName()))
         platoon:SetGrouping(4)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
         platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
@@ -478,15 +478,19 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
     airwing:SetAirbase(ab)
     airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
     for i=1, #(templates.TRANSPORT_HELI) do
-            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 3, string.format("%s Helicopter Transport Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
-            squadron:SetGrouping(2) -- Two aircraft per group.
-            squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
-            squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
-            squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
+            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, ab:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
+            squadron:SetGrouping(1) -- Two aircraft per group.
+            squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,..
+            squadron:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT}, 90)
+            --squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
+            
+            --squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
+
+            
             --Time to get ready again, time to repair per life point taken
-            squadron:SetTurnoverTime(10, 0)
-            airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
+            --squadron:SetTurnoverTime(10, 0)
+            --airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
             airwing:AddSquadron(squadron)
     end
     for i=1, #(templates.ATTACK_HELI) do
@@ -674,6 +678,7 @@ function HC:Start()
     end
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
+    HC.BLUE.CHIEF:__Start(1)
     for i=1, #(self.ActiveAirbases) do
         local abi = self.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
@@ -697,14 +702,15 @@ function HC:Start()
         --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
         --HC:SetChiefStrategicZoneBehavior(HC.BLUE.CHIEF, opsZone)
 
-        local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-        HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-
-        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-        HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-        local transportHelo = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 2, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
+        --local resourceOccupied, helos = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+        --HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        local resourceOccupied = {}
+        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 2, GROUP.Attribute.GROUND_INFANTRY)
+        --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
+        --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
         HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
-        opsZone:Start()
+        --opsZone:Start()
     end
     HC.RESUPPLY_TIMER = TIMER:New(HC.ResupplyTick, HC)
     HC.RESUPPLY_TIMER:Start(5,5)
@@ -726,7 +732,7 @@ function HC:ResupplyTick()
         local abi = self.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
         local opsZone = OPSZONE:FindByName(abi.Name)
-        self:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
+        --self:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
         abi.Coalition = ab:GetCoalition()
         if(abi.HP < 100) then
             abi.HP = abi.HP + 1
@@ -739,6 +745,6 @@ end
 
 HC:Start()
 --HC.RED.CHIEF:__Start(1)
-HC.BLUE.CHIEF:__Start(1)
+--HC.BLUE.CHIEF:__Start(10)
 
 

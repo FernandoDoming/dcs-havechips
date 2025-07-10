@@ -100,6 +100,11 @@
 --     zoneRadiusToDestroy:SearchZone( destroyUnit , Object.Category.UNIT)
 -- end
 
+--dofile("C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/havechips/dev/havechips.lua")
+--dofile("C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/havechips/dev/mission.lua")
+--PERUN:CleanZone("FARP Pobeda")
+--PERUN:SpawnInZone("FARP Pobeda", "blue")
+
 PERUN = {
     CurrentSuffix = 1
 }
