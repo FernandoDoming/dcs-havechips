@@ -438,7 +438,7 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
     for i=1, #(templates.LIGHT_INFANTRY) do
         local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 4, string.format("%s Infantry %d %s", side, i, ab:GetName()))
         platoon:SetGrouping(4)
-        platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CAPTUREZONE, AUFTRAG.Type.ONGURAD}, 70)
+        platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.ONGURAD}, 70)
         -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
         -- platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
         platoon:SetAttribute(GROUP.Attribute.GROUND_INFANTRY)
@@ -678,7 +678,6 @@ function HC:Start()
     end
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
-    HC.BLUE.CHIEF:__Start(1)
     for i=1, #(self.ActiveAirbases) do
         local abi = self.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
@@ -709,7 +708,8 @@ function HC:Start()
         --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
         --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
-        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+        --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceEmpty, resourceEmpty)
         --opsZone:Start()
     end
     HC.RESUPPLY_TIMER = TIMER:New(HC.ResupplyTick, HC)
@@ -744,6 +744,7 @@ end
 
 
 HC:Start()
+HC.BLUE.CHIEF:__Start(1)
 --HC.RED.CHIEF:__Start(1)
 --HC.BLUE.CHIEF:__Start(10)
 
