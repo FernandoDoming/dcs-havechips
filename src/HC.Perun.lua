@@ -1,4 +1,4 @@
---dofile("C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/havechips/dev/PERUN.lua")
+--dofile("C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/havechips/src/HC.PERUN.lua")
 
 
 PERUN = {
@@ -64,13 +64,13 @@ function PERUN:DestroyGroup(groupName)
 end  
 
 
-function PERUN:SpawnInZone(zoneName, Coalition)
+function PERUN:SpawnInZone(zoneName, coalitionName)
     local z = ZONE:FindByName(zoneName)
     if(not z) then
         env.info("Zone not found "..zoneName)
         return
     end
-    local spawn = SPAWN:NewWithAlias("PERUN_"..string.upper(Coalition), string.format("PERUN-%d", PERUN.CurrentSuffix))
+    local spawn = SPAWN:NewWithAlias("PERUN_"..string.upper(coalitionName), string.format("PERUN-%d", PERUN.CurrentSuffix))
     PERUN.CurrentSuffix = PERUN.CurrentSuffix +1
     spawn:SpawnInZone(z, true)
 end    

@@ -1,4 +1,4 @@
---This class is used to persist airbase state between server restarts
+--This class is primarily used to persist airbase state between server restarts
 AIRBASEINFO = {
     Name = nil,
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
@@ -6,6 +6,7 @@ AIRBASEINFO = {
     MarkId = nil
 }
 
+--Gets Lua table that will be peristed
 function AIRBASEINFO:GetTable()
     return {
         Name = self.Name,
@@ -50,7 +51,7 @@ function AIRBASEINFO:DrawLabel()
         colorFill = {1,1,1}
         colorText = {0.2,0.2,0.2}
     end
-    if(not HC:IsFrontlineAirbase(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+    if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
         colorText = {1, 1,0.5}
     end
     if(self.MarkId ~= nil) then
@@ -66,8 +67,8 @@ function AIRBASEINFO:DrawLabel()
         HPIndicator = HPIndicator.."░"
         --HPIndicator = HPIndicator.."_"
     end
-    HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
-    self.MarkId = coord:TextToAll(" "..ab:GetName().." \n "..HPIndicator.." \n", coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    --HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
+    self.MarkId = coord:TextToAll(string.format(" %s \n%s %.1d %% \n ", ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --airbase - MOOSE AIRBASE object

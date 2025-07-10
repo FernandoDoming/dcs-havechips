@@ -164,7 +164,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn()
-    chief:SetVerbosity(5)
+    chief:SetVerbosity(0)
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         HC:W("Zone is now lost")
@@ -175,7 +175,9 @@ function HC:CreateChief(side, alias)
     end
 
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
+        --this eventhandler will be moved to HC main
         HC:W("Zone is now empty")
+        local ab = AIRBASE:FindByName(opszone:GetName())
         --zone neutralized, send troops to capture it
         --possible scenario
         --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
@@ -592,8 +594,9 @@ function HC:Start()
         self:SetupAirbaseInventory(ab)
         local opsZone = OPSZONE:New(ab.AirbaseZone, ab:GetCoalition())
         opsZone:SetMarkZone(false)
+        opsZone:SetDrawZone(true) 
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
-            opsZone:SetDrawZone(false)
+            --opsZone:SetDrawZone(false)             
             local staticWarehouse = self:SetupStaticWarehouse(ab)
             HC:PopulateBase(staticWarehouse, ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
@@ -602,6 +605,12 @@ function HC:Start()
         ab:SetAutoCaptureON()
         HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
         HC:SetChiefStrategicZoneBehavior(HC.RED.CHIEF, opsZone)
+
+        function opsZone:OnAfterEmpty(From, Event, To)
+            HC.OnZoneEmpty(HC, From, Event, To, self)
+        end
+
+
         --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, 2, {},{})
         --HC:SetChiefStrategicZoneBehavior(HC.BLUE.CHIEF, opsZone)
 
@@ -609,18 +618,23 @@ function HC:Start()
         --HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         local resourceOccupied = {}
         local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 2, GROUP.Attribute.GROUND_INFANTRY)
-        --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.AIR_TRANSPORTHELO})
         --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
         --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
         HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
         --opsZone:Start()
     end
+    --Periodic calls
     HC.SHORT_TICK_TIMER = TIMER:New(HC.OnShortTick, HC)
     HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
     HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
     HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
     self:T("Startup completed")
+end
+
+function HC:OnZoneEmpty(From, Event, To, opsZone)
+    env.warning("*************** ZONE ".."".." IS EMPTY ******************")
 end
 
 function HC:EndMission()

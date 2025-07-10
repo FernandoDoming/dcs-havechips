@@ -1,4 +1,7 @@
 --Initialization script
+env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HC.AirbaseInfo.lua")
+dofile(lfs.writedir().."Missions/havechips/src/HC.AirbaseInfo.lua")
+
 env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HaveChipsMain.lua")
 dofile(lfs.writedir().."Missions/havechips/src/HaveChipsMain.lua")
 env.info("Running mission")
