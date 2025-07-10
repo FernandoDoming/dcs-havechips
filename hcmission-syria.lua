@@ -4,7 +4,12 @@ dofile(lfs.writedir().."Missions/havechips/src/HC.AirbaseInfo.lua")
 
 env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HaveChipsMain.lua")
 dofile(lfs.writedir().."Missions/havechips/src/HaveChipsMain.lua")
+
+env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HC.Utils.lua")
+dofile(lfs.writedir().."Missions/havechips/src/HC.Utils.lua")
+
 env.info("Running mission")
+HC:Start()
 
 
 -- MESSAGE:New("Spawning red SEAD at Kutaisi",  20):ToAll()

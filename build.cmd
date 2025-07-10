@@ -13,3 +13,5 @@ echo ------------------- AIRBASEINFO ------------------- >> %OUTFILE%
 type .\src\HC.AirbaseInfo.lua >> %OUTFILE%
 echo ------------------- HAVE CHIPS ------------------- >> %OUTFILE%
 type .\src\HaveChipsMain.lua >> %OUTFILE%
+echo ------------------- HAVE CHIPS ------------------- >> %OUTFILE%
+type .\src\HC.Utils.lua >> %OUTFILE%

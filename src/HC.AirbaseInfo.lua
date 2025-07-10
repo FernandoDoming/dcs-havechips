@@ -1,9 +1,10 @@
+env.info("Loading HC.AIRBASEINFO")
 --This class is primarily used to persist airbase state between server restarts
 AIRBASEINFO = {
-    Name = nil,
+    Name = nil, --Airbase name
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
-    Coalition = coalition.side.NEUTRAL,
-    MarkId = nil
+    Coalition = coalition.side.NEUTRAL, --Current coalition
+    MarkId = nil --Label MarkId on F10 Map
 }
 
 --Gets Lua table that will be peristed
@@ -30,7 +31,7 @@ function AIRBASEINFO:DrawLabel()
     local textSize = 14
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
-    if(not HC:IsFrontlineAirbase(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+    if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
         colorText = COLOR_MAIN_BASE_TEXT
     else
         colorText = COLOR_FARP_FRONTLINE_TEXT
@@ -99,19 +100,6 @@ end
 --@return #bool true if base is close to front line
 function AIRBASEINFO:IsFrontline()
     local airbase = AIRBASE:FindByName(self.Name)
-    local FRONTLINE_DISTANCE = 50000 --distance in meters, if an enemy airbase or farp is at or closer than FRONTLINE_DISTANCE, airbase is considered a frontline airbase
-    local coord = airbase:GetCoordinate()
-    local enemySide = nil
-    if (airbase:GetCoalition() == coalition.side.NEUTRAL) then
-        return false
-    end        
-    if(airbase:GetCoalition() == coalition.side.RED) then
-        enemySide = "blue"
-    else
-        enemySide = "red"
-    end
-    local enemyBases = SET_AIRBASE:New():FilterCoalitions(enemySide):FilterOnce()
-    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
-    local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
-    return dist <= 50000
+    return HC:IsFrontlineAirbase(airbase)
 end
+env.info("HC.AIRBASEINFO loaded")
