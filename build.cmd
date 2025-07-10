@@ -8,6 +8,8 @@ type .\lib\Splash_Damage_3.3.lua >> %OUTFILE%
 echo ------------------- EWRS ------------------- >> %OUTFILE%
 type .\lib\EWRS.lua >> %OUTFILE%
 echo ------------------- PERUN ------------------- >> %OUTFILE%
-type .\src\Perun.lua >> %OUTFILE%
+type .\src\HC.Perun.lua >> %OUTFILE%
+echo ------------------- AIRBASEINFO ------------------- >> %OUTFILE%
+type .\src\HC.AirbaseInfo.lua >> %OUTFILE%
 echo ------------------- HAVE CHIPS ------------------- >> %OUTFILE%
 type .\src\HaveChipsMain.lua >> %OUTFILE%
