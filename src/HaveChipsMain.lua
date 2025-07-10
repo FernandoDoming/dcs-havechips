@@ -324,16 +324,26 @@ function HC:PopulateBase(warehouse, ab, hp, isFrontline)
     --todo: track used zones to prevent spawning groups on top of each other
     local childZones = self:GetChildZones(ab.AirbaseZone)
     local childZonesCount = #(childZones)
+    local unitAlias = string.format("Base security detachment %s", ab:GetName())
+
     if(childZonesCount > 0) then
-        local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], string.format("Base security detachment %s", ab:GetName()))
+        local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
                 self:T(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
+                function grp:OnEventUnitLost(e)
+                    env.info("Group"..self:GetNAme().." lost a unit")            
+                end
             end
         )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         :InitRandomizeZones( childZones )
         local bsGroup = baseSecurity:Spawn()
+        bsGroup:HandleEvent( EVENTS.UnitLost )
+        function bsGroup:OnEventUnitLost(e)
+            env.info("Group"..self:GetNAme().." lost a unit")            
+        end
+
         chief:AddAgent(bsGroup)
     else
         self:W(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
@@ -616,6 +626,7 @@ function HC:Start()
             --add base defense units
             HC:PopulateBase(staticWarehouse, ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
+            opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT)
             --abi:DrawLabel()
         end
         ab:SetAutoCaptureON()
@@ -679,13 +690,32 @@ function HC:OnUnitKilled(e)
 --  BASE    4
 --  SCENERY 5
 --  Cargo   6
-    env.warning("SOMETHIG GOT killed ")
+
     if (e and e.IniCategory and e.IniCoalition and e.IniTypeName and e.IniObjectCategory
             and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
             and e.WeaponName) then
         local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniTypeName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtTypeName, e.WeaponName)
         env.warning(BDA)
         MESSAGE:New(BDA, 10):ToAll()
+        if(e.TgtObjectCategory == Object.Category.UNIT or e.TgtObjectCategory == Object.Category.STATIC) then
+            --Find which airbase and apply damage
+            if (e.TgtDCSUnit) then
+                local position = e.TgtDCSUnit:getPosition() --x,y,z
+                local tgtCoalitionName = UTILS.GetCoalitionName(e.TgtCoalition)
+                local friendlyBases = SET_AIRBASE:New():FilterCoalitions(string.lower(tgtCoalitionName)):FilterOnce()
+                friendlyBases:ForEachAirbase(
+                    function(b)
+                        env.info("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
+                    end
+                )
+                local coord = COORDINATE:NewFromVec3(position.p)
+                local b, dist = coord:GetClosestAirbase()
+                if (dist <= 2500 and b:GetCoalition() == e.TgtCoalition) then
+                    --Unit killed within friendly airbase/FARP range
+                    env.info(string.format("Unit killed $d from %s", dist, b:GetName()))
+                end
+            end
+        end
     end
 end  
 
