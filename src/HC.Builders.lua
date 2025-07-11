@@ -366,7 +366,7 @@ function HC:GetChiefZoneResponse(chief)
         --local resourceOccupied, _ = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_TANK)
 
         --local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
-        local resourceEmpty, emptyIFV = chief:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_IFV)
+        local resourceEmpty, emptyIFV = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
 
         --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         --HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.GROUND_APC})
