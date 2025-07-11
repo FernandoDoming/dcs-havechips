@@ -2,6 +2,9 @@
   "diagnostics": {
     "disable": ["undefined-global"]
   },
+  "completion":{
+    "enable": false
+  },
   "workspace": {
     "enableReindex": false,
     "encoding": "utf-8",
