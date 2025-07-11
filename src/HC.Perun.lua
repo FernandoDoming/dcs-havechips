@@ -1,5 +1,4 @@
---dofile("C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/havechips/src/HC.PERUN.lua")
-
+--Perun is the slavic god of thunder
 
 PERUN = {
     VERSION = 0.1,

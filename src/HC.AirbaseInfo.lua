@@ -17,6 +17,7 @@ function AIRBASEINFO:GetTable()
     }
 end
 
+-- Draws airbase or FARP label on F10 map
 function AIRBASEINFO:DrawLabel()
     local BLUE_COLOR_FARP = {0.2,0.2,1}
     local BLUE_COLOR_AIRBASE = {0,0,1}
@@ -72,8 +73,8 @@ function AIRBASEINFO:DrawLabel()
     self.MarkId = coord:TextToAll(string.format(" %s \n %s %.1d %% \n ", ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
---airbase - MOOSE AIRBASE object
---hp - airbase state 0-100 with 100 being 100% operational
+--@param #AIRBASE airbase - MOOSE AIRBASE object
+--@param #number hp - airbase state 0-100 with 100 being 100% operational
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     local o = {}
     o.Name = airbase:GetName()
