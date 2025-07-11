@@ -1,7 +1,7 @@
 env.info("Loading HC.AIRBASEINFO")
 --This class is primarily used to persist airbase state between server restarts
 AIRBASEINFO = {
-    WPIndex = 0,
+    WPIndex = 99,
     Name = nil, --Airbase name
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL, --Current coalition
@@ -28,7 +28,7 @@ function AIRBASEINFO:DrawLabel()
     local COLOR_MAIN_BASE_TEXT = {1,1,1}
     local COLOR_FARP_FRONTLINE_TEXT = {1,1,1}
     local colorFill = {1,0,0}
-    local fillAlpha = 0.85
+    local fillAlpha = 0.7
     local colorText = {1,1,1}
     local textAlpha = 1
     local textSize = 14
@@ -53,10 +53,10 @@ function AIRBASEINFO:DrawLabel()
         end
     else
         colorFill = {1,1,1}
-        colorText = {0.2,0.2,0.2}
+        colorText = {0.3,0.3,0.3}
     end
     if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
-        colorText = {1, 1,0.5}
+        colorText = {1, 1, 0.5}
     end
     if(self.MarkId ~= nil) then
         --env.info("Removing mark "..self.MarkId)
@@ -65,20 +65,18 @@ function AIRBASEINFO:DrawLabel()
     local HPIndicator =""
     for i=1, math.floor(self.HP/10) do
         HPIndicator = HPIndicator.."█"
-        --HPIndicator = HPIndicator.."+"
     end
     for i=1, 10 - math.floor(self.HP/10) do
         HPIndicator = HPIndicator.."░"
-        --HPIndicator = HPIndicator.."_"
     end
-    --HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
-    self.MarkId = coord:TextToAll(string.format(" %d %s \n %s %.1d %% \n ", self.WPIndex,ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    self.MarkId = coord:TextToAll(string.format(" %d. %s \n %s %.1d %% \n %s", self.WPIndex,ab:GetName(), HPIndicator, self.HP, ab:GetCategoryName()), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --@param #AIRBASE airbase - MOOSE AIRBASE object
 --@param #number hp - airbase state 0-100 with 100 being 100% operational
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     local o = {}
+    WPIndex = 99
     o.Name = airbase:GetName()
     o.HP = hp or 100
     o.Coalition = airbase:GetCoalition()
@@ -90,7 +88,7 @@ end
 
 function AIRBASEINFO:NewFromTable(table)
     local o = {}
-    o.WPIndex = table.WPIndex or 0
+    o.WPIndex = table.WPIndex or 99
     o.Name = table.Name
     o.HP = table.HP
     o.Coalition = table.Coalition

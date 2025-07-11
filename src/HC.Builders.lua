@@ -213,7 +213,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     airwing:SetDespawnAfterHolding(true)
     airwing:SetDespawnAfterLanding(true)
     airwing:SetAirbase(airbase)
-    airwing:SetVerbosity(5) --set to 0 to prevent large number of trace messages in log
+    airwing:SetVerbosity(0) --set to 0 to prevent large number of trace messages in log
     airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
     for i=1, #(templates.TRANSPORT_HELI) do
             local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
@@ -397,7 +397,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn() --for debugging
-    chief:SetVerbosity(5) --set to 5 for debugging
+    chief:SetVerbosity(0) --set to 5 for debugging
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         HC:W("Zone is now lost")

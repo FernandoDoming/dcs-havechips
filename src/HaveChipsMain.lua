@@ -56,9 +56,11 @@ function HC:Start()
             table.insert(wpList, k, {x = v.x, y=v.y})
         end
         wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
-        local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterOnce() --get only red and blue, ignore neutral
+        --local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({Airbase.Category.HELIPAD, Airbase.Category.AIRDROME}):FilterOnce() --get only red and blue, ignore neutral
+        local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({"helipad", "airdrome"}):FilterOnce() --get only red and blue, ignore neutral
         bases:ForEachAirbase(
             function(b)
+                env.info("Checking base "..b:GetName())
                 local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
                 for i=1, #wpList do
                     local zone = b.AirbaseZone
