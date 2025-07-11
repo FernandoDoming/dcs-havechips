@@ -44,34 +44,34 @@ function HC:Start()
     ----------------------------------------------------------------------------------------------------------
     --                      Initialize campaign state or load progress
     ----------------------------------------------------------------------------------------------------------
-    if(not self:FileExists(basePath..filename)) then
+    if(not HC:FileExists(basePath..filename)) then
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
-        self:T("Initializing campaign")
+        HC:T("Initializing campaign")
         local airbases = AIRBASE.GetAllAirbases()
         for i=1, #(airbases) do
             local ab = airbases[i]
             if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
                 --RED and BLUE bases will be considered as strategic zones, everything else will be ignored
                 local abi = AIRBASEINFO:NewFromAIRBASE(ab, 100)
-                table.insert(self.ActiveAirbases, abi)
+                table.insert(HC.ActiveAirbases, abi)
             end
         end
         --save to file
-        HC:SaveTable(self.ActiveAirbases, basePath..filename)
+        HC:SaveTable(HC.ActiveAirbases, basePath..filename)
     else
         --Campaign is in progress, we need to load the data
-        self:T("Loading campaign progress")
+        HC:T("Loading campaign progress")
         local success = false
         local data = {}
         success, data = HC:LoadTable(basePath..filename)        
         if(success) then
-            self:T("Table loaded from file "..basePath..filename)
+            HC:T("Table loaded from file "..basePath..filename)
             for i=1, #data do
-                table.insert(self.ActiveAirbases, AIRBASEINFO:NewFromTable(data[i]))
+                table.insert(HC.ActiveAirbases, AIRBASEINFO:NewFromTable(data[i]))
             end
         else
-            self:W("Could not load table from file "..basePath..filename)
+            HC:W("Could not load table from file "..basePath..filename)
         end
     end
     ----------------------------------------------------------------------------------------------------------
@@ -79,8 +79,8 @@ function HC:Start()
     ----------------------------------------------------------------------------------------------------------
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
-    for i=1, #(self.ActiveAirbases) do
-        local abi = self.ActiveAirbases[i]
+    for i=1, #(HC.ActiveAirbases) do
+        local abi = HC.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
         ab:SetCoalition(abi.Coalition)  
         
@@ -91,18 +91,18 @@ function HC:Start()
         function opsZone:OnAfterEmpty(From, Event, To)
             HC.OnZoneEmpty(HC, From, Event, To, self)
         end
-        local isFrontline = self:IsFrontlineAirbase(ab)
+        local isFrontline = HC:IsFrontlineAirbase(ab)
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
 
         --setup base available airframes and weapons based on templates
-        self:SetupAirbaseInventory(ab) 
+        HC:SetupAirbaseInventory(ab) 
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
             --opsZone:SetDrawZone(false)             
-            local staticWarehouse = self:SetupStaticWarehouse(ab)            
+            local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)            
             --add AI units to base to be used by CHIEF
             HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
             --spawn base defense units
-            HC:PopulateBase(staticWarehouse, ab, abi.HP, isFrontline)
+            HC:SetupAirbaseDefense(ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
             opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT) --and only ground units can capture zone
             --abi:DrawLabel()
@@ -129,7 +129,7 @@ function HC:Start()
         HC:OnUnitKilled(e)
     end
     HC.BLUE.CHIEF:__Start(1)
-    self:T("Startup completed")
+    HC:T("Startup completed")
 end
 
 function HC:OnZoneEmpty(From, Event, To, opsZone)
@@ -197,12 +197,12 @@ end
 --Periodic resupply of all airbases and FARPs
 --@param #number resupplyPercent resupply amount in percent
 function HC:AirbaseResupply(resupplyPercent)
-    self:T("Passive resupply triggered")
-    for i=1, #(self.ActiveAirbases) do
-        local abi = self.ActiveAirbases[i]
+    HC:T("Passive resupply triggered")
+    for i=1, #(HC.ActiveAirbases) do
+        local abi = HC.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
         local opsZone = OPSZONE:FindByName(abi.Name)
-        --self:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
+        --HC:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
         abi.Coalition = ab:GetCoalition()
         if(abi.HP + resupplyPercent <= 100) then
             abi.HP = abi.HP + resupplyPercent

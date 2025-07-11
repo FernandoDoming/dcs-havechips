@@ -6,8 +6,8 @@ Contains verious methods to generate the scenario, initializes templates, popula
 ]]
 
 
---Gets all template group names for side of missionType (or unit category), method is used internally
---currently TEMPLATE_CATEGORIES {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"}
+--Gets all template group names for side of missionType, see HC.TEMPLATE_CATEGORIES
+--HC.TEMPLATE_CATEGORIES {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"}
 --@param #string side "RED" or "BLUE"
 --@param #string missionType Template zone name part. Pattern is <SIDE>_<missionType>_TEMPLATES, see template zones in mission editor, possible values "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"
 function HC:GetTemplateGroupNames(side, missionType)    
@@ -16,7 +16,7 @@ function HC:GetTemplateGroupNames(side, missionType)
     local zoneName = string.upper(side.."_"..missionType.."_TEMPLATES")
     local templateZone = ZONE:FindByName(zoneName)
     if (templateZone == nil) then
-        self:W("Couldn't find template zone "..zoneName.." no templates for "..side.." "..missionType.." will be available!")
+        HC:W("Couldn't find template zone "..zoneName.." no templates for "..side.." "..missionType.." will be available!")
         return {}
     end
 
@@ -25,7 +25,7 @@ function HC:GetTemplateGroupNames(side, missionType)
         function(g)
             --Get first unit in group, if in specified zone then add to templates, not perfect but it works
             if (templateZone:IsVec3InZone(g:GetUnits()[1]:GetVec3())) then
-                self:T(g.GroupName.." added to " ..side.." templates ".. missionType)
+                HC:T(g.GroupName.." added to " ..side.." templates ".. missionType)
                 table.insert(templates, g:GetName())
             end    
         end
@@ -35,15 +35,30 @@ end
 
 --Initializes the templates structure for Airwings and platoons
 function HC:InitGroupTemplates()
-    self:T("Initializing group templates")
+    HC:T("Initializing group templates")
     local sides = {"RED", "BLUE"}
     for j=1, #(sides) do        
         for i=1,#(HC.TEMPLATE_CATEGORIES) do
-            self[string.upper(sides[j])].TEMPLATES[HC.TEMPLATE_CATEGORIES[i]] = self:GetTemplateGroupNames(sides[j], HC.TEMPLATE_CATEGORIES[i])
+            HC[sides[j]].TEMPLATES[HC.TEMPLATE_CATEGORIES[i]] = HC:GetTemplateGroupNames(sides[j], HC.TEMPLATE_CATEGORIES[i])
         end  
     end
-    self:T("Group templates initialized")
+    HC:T("Group templates initialized")
 end
+
+--Gets a list of <templatesCount> randomly chosen template group names for specified template category (mission type), see HC.TEMPLATE_CATEGORIES
+--@param #string side "RED" or "BLUE"
+--@param #string missionType Template zone name part. Pattern is <SIDE>_<missionType>_TEMPLATES, see template zones in mission editor, possible values "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"
+--@param templatesCount number of template group names to return
+--@return list of template group names that fit the criteria, duplicates are possible
+function HC:GetRandomTemplates(side, missionType, templatesCount)
+    local templates = HC:GetTemplateGroupNames(side, missionType)
+    local result = {}
+    for i=1, templatesCount do
+        local randomIndex = math.random(#templates)
+        table.insert(result, templates[randomIndex])
+    end
+    return result
+end    
 
 --Initializes inventory templates for airbases, frontline airbases and FARPS
 --Inventory templates are defined by static cargo objects with names 
@@ -51,39 +66,51 @@ end
 --<SIDE>_FRONTLINE_INVENTORY for "frontline" airbases
 --<SIDE>_FARP_INVENTORY for FARPS
 function HC:InitInventoryTemplates()
-    self:T("Initializing inventory templates")
+    HC:T("Initializing inventory templates")
     HC.RED.INVENTORY_TEMPLATES.MAIN = STATIC:FindByName("RED_MAIN_INVENTORY"):GetStaticStorage()
     HC.RED.INVENTORY_TEMPLATES.FRONTLINE = STATIC:FindByName("RED_FRONTLINE_INVENTORY"):GetStaticStorage()
     HC.RED.INVENTORY_TEMPLATES.FARP = STATIC:FindByName("RED_FARP_INVENTORY"):GetStaticStorage()
     HC.BLUE.INVENTORY_TEMPLATES.MAIN = STATIC:FindByName("BLUE_MAIN_INVENTORY"):GetStaticStorage()
     HC.BLUE.INVENTORY_TEMPLATES.FRONTLINE = STATIC:FindByName("BLUE_FRONTLINE_INVENTORY"):GetStaticStorage()
     HC.BLUE.INVENTORY_TEMPLATES.FARP = STATIC:FindByName("BLUE_FARP_INVENTORY"):GetStaticStorage()
-    self:T("Inventory templates initialized")
+    HC:T("Inventory templates initialized")
 end
 
---Adds static warehouse to airbase (required by MOOSE)
+--Adds static warehouse to airbase (required by MOOSE CHIEF)
 --@param #AIRBASE airbase - MOOSE airbase
 --@param AIRBASEINFO abInfo - extended airbase info
-function HC:SetupStaticWarehouse(airbase)
-    --ToDo: clear zone area
-    local side = string.upper(airbase:GetCoalitionName())
-    local warehouseName = side.."_WAREHOUSE_"..airbase:GetName()
+function HC:SetupAirbaseStaticWarehouse(airbase)
+    local SIDE = string.upper(airbase:GetCoalitionName())
+    -- Check if we have an enemy warehouse left over from before
+    local enemySide = ""
+    if (SIDE == "RED") then
+        enemySide = "BLUE"
+    else
+        enemySide = "RED"
+    end
+    local enemyWarehouse = STATIC:FindByName(enemySide.."_WAREHOUSE_"..airbase:GetName(), false)
+    if (enemyWarehouse) then
+        --enemy warehouse exists, destroy it
+        enemyWarehouse:Destroy(false)
+    end
+
+    local warehouseName = SIDE.."_WAREHOUSE_"..airbase:GetName()
     --Check if we already have a warehouse
     local warehouse = STATIC:FindByName(warehouseName, false)
     if( warehouse) then
-        self:W(string.format("Warehouse %s on %s already exists!", warehouseName, airbase:GetName()))
+        HC:W(string.format("Warehouse %s on %s already exists!", warehouseName, airbase:GetName()))
     else
-        --spawn a warehouse
-        local childZones = self:GetChildZones(airbase.AirbaseZone)
+        --spawn a warehouse in one of the airbase perimeter child zones which provide safe place for spawning
+        local childZones = HC:GetChildZones(airbase.AirbaseZone)
         local childZonesCount = #(childZones)
-        local whspawn = SPAWNSTATIC:NewFromStatic(side.."_WAREHOUSE_TEMPLATE")   
+        local whspawn = SPAWNSTATIC:NewFromStatic(SIDE.."_WAREHOUSE_TEMPLATE")   
         local position = airbase:GetZone():GetRandomPointVec2()
         local whSpawnZone = airbase.AirbaseZone
         if(childZonesCount > 0) then
             whSpawnZone = childZones[math.random(childZonesCount)]
-            self:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), whSpawnZone:GetName()))
+            HC:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), whSpawnZone:GetName()))
         else
-            self:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", airbaseab:GetName(), aairbaseb:GetName()))
+            HC:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", airbase:GetName(), airbase:GetName()))
         end
         position = whSpawnZone:GetPointVec2()
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
@@ -91,24 +118,24 @@ function HC:SetupStaticWarehouse(airbase)
     return warehouse
 end
 
---Sets up airbase inventory, aircraft and weapon availability
+--Sets up airbase inventory, aircraft and weapon availability, this is required to limit airframe availability, note that it applies to AI CHIEF and human players
 --Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
 --@param #AIRBASE airbase to set up
 function HC:SetupAirbaseInventory(airbase)
-    self:T("Seting up inventory for "..airbase:GetName())
+    HC:T("Seting up inventory for "..airbase:GetName())
     local targetStorage = STORAGE:FindByName(airbase:GetName())
     local sourceStorage = nil
     local SIDE = string.upper(airbase:GetCoalitionName())
     if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
         sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FARP
     elseif (airbase:GetCategory() == Airbase.Category.AIRDROME) then
-        if(self:IsFrontlineAirbase(airbase)) then
+        if(HC:IsFrontlineAirbase(airbase)) then
             sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FRONTLINE
         else
             sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.MAIN
         end            
     else
-        self:W("Unknown airbase category ")
+        HC:W("Unknown airbase category ")
         return
     end
     local sourceAircraft, _, sourceWeapons = sourceStorage:GetInventory()
@@ -138,10 +165,10 @@ end
 --@param $WAREHOUSE - static warehouse used by chief
 --@param AIRBASE - airbase to set up
 function HC:SetupAirbaseChiefUnits(warehouse, airbase)
---Generate units stationed at base and add them to chief 
+    --Generate units stationed at base and add them to chief 
     local side = string.upper(airbase:GetCoalitionName())
-    local templates = self[side].TEMPLATES
-    local chief = self[side].CHIEF
+    local templates = HC[side].TEMPLATES
+    local chief = HC[side].CHIEF
     --Ground units
     local brigade=BRIGADE:New(warehouse:GetName(), side.." brigade "..airbase:GetName())
     for i=1, #(templates.LIGHT_INFANTRY) do
@@ -175,39 +202,36 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     brigade:SetSpawnZone(airbase.AirbaseZone)
     chief:AddBrigade(brigade)
     
-    --Air units
+    --Air unit mission type groups
     local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.RESCUEHELO, AUFTRAG.Type.CTLD}
 
     local airwing=AIRWING:New(warehouse:GetName(), string.format("%s Air wing %s", side, airbase:GetName()))
     --airwing:SetTakeoffHot()
-    airwing:SetTakeoffAir()
+    airwing:SetTakeoffAir() --For quicker testing to not have to wait for AI to take off
     airwing:SetDespawnAfterHolding(true)
+    airwing:SetDespawnAfterLanding(true)
     airwing:SetAirbase(airbase)
+    airwing:SetVerbosity(5) --set to 0 to prevent large number of trace messages in log
     airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
     for i=1, #(templates.TRANSPORT_HELI) do
             local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
-            squadron:SetGrouping(1) -- Two aircraft per group.
-            squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,..
-            squadron:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT}, 90)
-            --squadron:AddMissionCapability( HELI_TRANSPORT_TASKS, 90) -- The missions squadron can perform
-            
-            --squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
-
-            
+            squadron:SetGrouping(1) -- 1 aircraft per group.
+            squadron:SetModex(10)  -- Tail number of the sqaud start with 60
+            squadron:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT}, 90) -- The missions squadron can perform with performance score for those missions 
+            squadron:SetMissionRange(60) -- Squad will be considered for targets within 40 NM of its airwing location.
             --Time to get ready again, time to repair per life point taken
-            --squadron:SetTurnoverTime(10, 0)
-            --airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
+            squadron:SetTurnoverTime(10, 0) --maintenance time, repair time [minutes]
             airwing:AddSquadron(squadron)
     end
     for i=1, #(templates.ATTACK_HELI) do
-            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 3, string.format("%s Attack Helicopter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
-            squadron:SetGrouping(2) -- Two aircraft per group.
-            squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
+            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 2, string.format("%s Attack Helicopter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+            squadron:SetGrouping(2)
+            squadron:SetModex(30)
             squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
-            squadron:SetMissionRange(40) -- Squad will be considered for targets within 200 NM of its airwing location.
+            squadron:SetMissionRange(40)
             squadron:SetAttribute(GROUP.Attribute.AIR_ATTACKHELO)
             squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
@@ -217,47 +241,124 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME) then
         for i=1, #(templates.CAP) do
                 local squadron=SQUADRON:New(templates.CAP[i], 2, string.format("%s Fighter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2) -- Two aircraft per group.
-                squadron:SetModex(10)  -- Tail number of the sqaud start with 130, 131,...
-                squadron:AddMissionCapability(FIGHTER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetGrouping(2)
+                squadron:SetModex(10)
+                squadron:AddMissionCapability(FIGHTER_TASKS, 90)
+                squadron:SetMissionRange(80).
                 squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS) --20 sets of armament
+                airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.CAS) do
                 local squadron=SQUADRON:New(templates.CAS[i], 2, string.format("%s Attack Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2) -- Two aircraft per group.
-                squadron:SetModex(30)  -- Tail number of the sqaud start with 130, 131,...
-                squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetGrouping(2)
+                squadron:SetModex(30)
+                squadron:AddMissionCapability(STRIKER_TASKS, 90)
+                squadron:SetMissionRange(80)
                 squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS) --20 sets of armament
+                airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
         end
         for i=1, #(templates.STRIKE) do
                 local squadron=SQUADRON:New(templates.STRIKE[i], 2, string.format("%s Strike Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2) -- Two aircraft per group.
-                squadron:SetModex(50)  -- Tail number of the sqaud start with 130, 131,...
-                squadron:AddMissionCapability(STRIKER_TASKS, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(80) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetGrouping(2)
+                squadron:SetModex(50)
+                squadron:AddMissionCapability(STRIKER_TASKS, 90)
+                squadron:SetMissionRange(80)
                 squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS) --20 sets of armament
+                airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
         end
             for i=1, #(templates.SEAD) do
                 local squadron=SQUADRON:New(templates.SEAD[i], 1, string.format("%s SEAD Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2) -- Two aircraft per group.
-                squadron:SetModex(60)  -- Tail number of the sqaud start with 130, 131,...
-                squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90) -- The missions squadron can perform
-                squadron:SetMissionRange(120) -- Squad will be considered for targets within 200 NM of its airwing location.
+                squadron:SetGrouping(2)
+                squadron:SetModex(60)
+                squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)
+                squadron:SetMissionRange(120)
                 squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD}) --20 sets of armament
-                squadron:SetVerbosity(3)                
+                airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
                 airwing:AddSquadron(squadron)
         end
     end    
     chief:AddAirwing(airwing) 
+end
+
+--Spawns units to defend an airbase or FARP
+--Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
+--@param ab AIRBASE
+--@param hp Base numeric (0-100) which abstracts overall combat readiness, morale, supply state...
+--@param isFrontline
+function HC:SetupAirbaseDefense(ab, hp, isFrontline)
+    HC:T("Setting up base defense for "..ab:GetName())    
+    local side = string.upper(ab:GetCoalitionName())
+    local templates = HC[side].TEMPLATES
+    local chief = HC[side].CHIEF
+    -- Base defense garrison based on airbase HP
+    local garrison = {
+        BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
+        SHORAD = 0, -- short range air defense groups from <SIDE>_SHORAD_TEMPLATES
+        SAM = 0, -- SAM batteries from <SIDE>_SAM_TEMPLATES
+        ARMOR = 0 -- armour defense groups from <SIDE>_TANK_TEMPLATES
+    }
+
+    if (hp <= 20) then
+        garrison = { BASE = 1, SHORAD = 0, SAM = 0, ARMOR = 0 }
+    elseif (HP > 20 and hp <= 40) then
+        garrison = { BASE = 1, SHORAD = 1, SAM = 0, ARMOR = 0 }
+        if (isFrontline) then
+            garrison.ARMOR = 1
+        end
+    elseif (HP > 40 and hp <= 60) then        
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0, ARMOR = 0 }
+        if (isFrontline) then
+            garrison.ARMOR = 1
+        end
+    elseif (HP > 60 and hp <= 80) then
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1, ARMOR = 0 }
+        if (isFrontline) then
+            garrison.ARMOR = 1
+        end
+    elseif (HP > 80 and hp <= 90) then
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2, ARMOR = 0 }
+        if (isFrontline) then
+            garrison.ARMOR = 2
+        end
+    elseif (HP > 90) then
+        garrison = { BASE = 1, SHORAD = 3, SAM = 3, ARMOR = 0 }
+        if (isFrontline) then
+            garrison.ARMOR = 2
+        end
+    end
+
+    --Add a security detachment to base
+    --find a random zone inside airbase zone and spawn base defense
+    --todo: track used zones to prevent spawning groups on top of each other
+    local childZones = HC:GetChildZones(ab.AirbaseZone)
+    local childZonesCount = #(childZones)
+    local unitAlias = string.format("Base security detachment %s", ab:GetName())
+
+    if(childZonesCount > 0) then
+        local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
+        :OnSpawnGroup(
+            function(grp)
+                HC:T(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
+                function grp:OnEventUnitLost(e)
+                    env.info("Group"..self:GetName().." lost a unit")            
+                end
+            end
+        )
+        :InitRandomizeTemplate(templates.BASE_SECURITY)
+        :InitRandomizeZones( childZones )
+        local bsGroup = baseSecurity:Spawn()
+        bsGroup:HandleEvent( EVENTS.UnitLost )
+        function bsGroup:OnEventUnitLost(e)
+            env.info("Group"..self:GetName().." lost a unit")            
+        end
+
+        chief:AddAgent(bsGroup)
+    else
+        HC:W(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
+    end    
 end
 
 --Creates MOOSE CHIEF object
@@ -295,8 +396,8 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(10, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
-    chief:SetTacticalOverviewOn()
-    chief:SetVerbosity(5)
+    chief:SetTacticalOverviewOn() --for debugging
+    chief:SetVerbosity(5) --set to 5 for debugging
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         HC:W("Zone is now lost")
@@ -325,37 +426,9 @@ function HC:CreateChief(side, alias)
         HC:W("OnAfterOpsOnMission")
         --mission:SetRoe(ENUMS.ROE.)
     end
-
-    --self[string.upper(side)].CHIEF = chief
     return chief
 end   
 
-
---Sets CHIEF response to strategic zone empty and occupied
---@param #CHIEF chief
---@param #OPSZONE strategic zone
-function HC:SetChiefStrategicZoneBehavior(chief, zone)
-    --- Create a resource list of mission types and required assets for the case that the zone is OCCUPIED.
-    -- local ResourceOccupied, resourcesTanks = chief:CreateResource(AUFTRAG.Type.ONGUARD, 0, 1, GROUP.Attribute.GROUND_TANK)
-    -- chief:AddToResource(ResourceOccupied, AUFTRAG.Type.CASENHANCED, 0, 1)
-    -- local ResourceEmpty, resourceInf=chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
-    
-    -- -- Add a transport to the infantry resource. We want at least one and up to two transport helicopters.
-    -- chief:AddTransportToResource(resourceInf, 1, 4, {GROUP.Attribute.AIR_TRANSPORTHELO})
-
-    -- -- Add stratetic zone with customized reaction.
-    -- chief:SetStrategicZoneResourceEmpty(zone, ResourceEmpty)
-    -- chief:SetStrategicZoneResourceOccupied(zone, ResourceOccupied)
-
-        --local resourceOccupied, helos = chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-        local resourceOccupied = {}
-        local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 2, GROUP.Attribute.GROUND_INFANTRY)
-        local transportHelo = chief:AddTransportToResource(emptyInfantry, 2, 4, GROUP.Attribute.AIR_TRANSPORTHELO)
-        chief:AddToResource(resourceEmpty, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_APC)
-        chief:SetStrategicZoneResourceEmpty(zone, resourceEmpty)
-        chief:SetStrategicZoneResourceOccupied(zone, resourceOccupied)
-
-end    
 
 --Creates resources for chief assault on empty and occupied zone
 --@param CHIEF chief
@@ -375,42 +448,4 @@ function HC:GetChiefZoneResponse(chief)
         --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
         --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
         return resourceEmpty, resourceOccupied
-end    
-
-
---Creates army brigade and an airwing at specified base and warehouse and provides them to chief
-function HC:PopulateBase(warehouse, ab, hp, isFrontline)
-    self:T("Populating base "..ab:GetName())    
-    local side = string.upper(ab:GetCoalitionName())
-    local templates = self[side].TEMPLATES
-    local chief = self[side].CHIEF
-    --Add a security detachment to base
-    --find a random zone inside airbase zone and spawn base defense
-    --todo: track used zones to prevent spawning groups on top of each other
-    local childZones = self:GetChildZones(ab.AirbaseZone)
-    local childZonesCount = #(childZones)
-    local unitAlias = string.format("Base security detachment %s", ab:GetName())
-
-    if(childZonesCount > 0) then
-        local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
-        :OnSpawnGroup(
-            function(grp)
-                self:T(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
-                function grp:OnEventUnitLost(e)
-                    env.info("Group"..self:GetNAme().." lost a unit")            
-                end
-            end
-        )
-        :InitRandomizeTemplate(templates.BASE_SECURITY)
-        :InitRandomizeZones( childZones )
-        local bsGroup = baseSecurity:Spawn()
-        bsGroup:HandleEvent( EVENTS.UnitLost )
-        function bsGroup:OnEventUnitLost(e)
-            env.info("Group"..self:GetNAme().." lost a unit")            
-        end
-
-        chief:AddAgent(bsGroup)
-    else
-        self:W(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
-    end    
 end

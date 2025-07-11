@@ -63,7 +63,7 @@ end
 function HC:FileExists(filename)
     --Check io
     if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
+        HC:E("ERROR: io not desanitized. Can't save current file.")
         return false
     end
     local f=io.open(filename, "r")
@@ -81,18 +81,18 @@ end
 function HC:LoadTable(filename)
     --Check io
     if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
+        HC:E("ERROR: io not desanitized. Can't save current file.")
         return false, nil
     end
     -- Check file name.
     if filename == nil then
-        self:E("Filename must be specified")
+        HC:E("Filename must be specified")
         return false, nil
     end
     
     local f = io.open(filename, "rb")
     if(f == nil) then
-        self:E("Could not open file '"..filename.."'")
+        HC:E("Could not open file '"..filename.."'")
         return false, nil
     end        
     local content = f:read("*all")
@@ -108,26 +108,26 @@ end
 function HC:SaveTable(table, filename)
     --Check io
     if not io then
-        self:E("ERROR: io not desanitized. Can't save current file.")
+        HC:E("ERROR: io not desanitized. Can't save current file.")
         return false
     end
     -- Check file name.
     if filename == nil then
-        self:E("Filename must be specified")
+        HC:E("Filename must be specified")
         return false
     end
     if (table == nil) then
-        self:E("Table is nil")
+        HC:E("Table is nil")
         return false
     end        
     --local json = assert(JSON.encode(table),"Couldn't encode Lua table")
     local json = NET.Lua2Json(table)
     local f = assert(io.open(filename, "wb"))
     if (f == nil) then
-        self:E("File open failed on file "..filename)
+        HC:E("File open failed on file "..filename)
         return false
     end        
     f:write(json)
     f:close()
 end
-env.info("HC.AIRBASEINFO loaded")
+env.info("HC.Utils loaded")

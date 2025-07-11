@@ -27,6 +27,13 @@
         },
         {
             "path": "../MOOSE_MISSIONS"
+        },
+        {
+            "name": "dcs-havechips/havechips_syria.miz",
+            "uri": "zip:/?file:///c:/Users/tgudelj/Documents/dev/dcs-havechips/havechips_syria.miz"
+        },
+        {
+            "path": "../MOOSE/Moose Development/Moose"
         }
     ]
 }
