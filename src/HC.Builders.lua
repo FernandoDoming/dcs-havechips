@@ -155,8 +155,8 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.MECHANIZED) do
-        local platoon = PLATOON:New(templates.MECHANIZED[i], 4, string.format("%s Mechanized inf %d %s", side,i, airbase:GetName()))
-        platoon:SetGrouping(4)
+        local platoon = PLATOON:New(templates.MECHANIZED[i], 2, string.format("%s Mechanized inf %d %s", side,i, airbase:GetName()))
+        platoon:SetGrouping(5)
         platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
         platoon:SetAttribute(GROUP.Attribute.GROUND_IFV)
@@ -164,8 +164,8 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.TANK) do
-        local platoon = PLATOON:New(templates.TANK[i], 4, string.format("%s Tank %d %s", side, i, airbase:GetName()))
-        platoon:SetGrouping(4)
+        local platoon = PLATOON:New(templates.TANK[i], 2, string.format("%s Tank %d %s", side, i, airbase:GetName()))
+        platoon:SetGrouping(6)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
         platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
         platoon:SetAttribute(GROUP.Attribute.GROUND_TANK)
