@@ -69,7 +69,11 @@ function AIRBASEINFO:DrawLabel()
     for i=1, 10 - math.floor(self.HP/10) do
         HPIndicator = HPIndicator.."░"
     end
-    self.MarkId = coord:TextToAll(string.format(" %d. %s \n %s %.1d %% \n %s", self.WPIndex,ab:GetName(), HPIndicator, self.HP, ab:GetCategoryName()), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    local baseTypePrefix = " "
+    if (ab:GetCategory() == Airbase.Category.HELIPAD) then
+        baseTypePrefix = "FARP"
+    end
+    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1d %% \n", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --@param #AIRBASE airbase - MOOSE AIRBASE object

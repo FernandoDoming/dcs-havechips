@@ -98,7 +98,7 @@ function HC:Start()
     for i=1, #(HC.ActiveAirbases) do
         local abi = HC.ActiveAirbases[i]
         local ab = AIRBASE:FindByName(abi.Name)
-        ab:SetCoalition(abi.Coalition)  
+        ab:SetCoalition(abi.Coalition)
         
         local abZone = ZONE_AIRBASE:New(ab:GetName())
         local opsZone = OPSZONE:New(abZone)   
