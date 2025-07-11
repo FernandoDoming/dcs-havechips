@@ -1,6 +1,7 @@
 env.info("Loading HC.AIRBASEINFO")
 --This class is primarily used to persist airbase state between server restarts
 AIRBASEINFO = {
+    WPIndex = 0,
     Name = nil, --Airbase name
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL, --Current coalition
@@ -10,6 +11,7 @@ AIRBASEINFO = {
 --Gets Lua table that will be peristed
 function AIRBASEINFO:GetTable()
     return {
+        WPIndex = self.WPIndex,
         Name = self.Name,
         HP = self.HP,
         Coalition = self.Coalition,
@@ -70,7 +72,7 @@ function AIRBASEINFO:DrawLabel()
         --HPIndicator = HPIndicator.."_"
     end
     --HPIndicator = HPIndicator.." "..tostring(self.HP).." %"
-    self.MarkId = coord:TextToAll(string.format(" %s \n %s %.1d %% \n ", ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    self.MarkId = coord:TextToAll(string.format(" %d %s \n %s %.1d %% \n ", self.WPIndex,ab:GetName(), HPIndicator, self.HP), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --@param #AIRBASE airbase - MOOSE AIRBASE object
@@ -88,6 +90,7 @@ end
 
 function AIRBASEINFO:NewFromTable(table)
     local o = {}
+    o.WPIndex = table.WPIndex or 0
     o.Name = table.Name
     o.HP = table.HP
     o.Coalition = table.Coalition

@@ -135,6 +135,10 @@ function refreshPlayers()
 end
 
 
+
+
+
+
     local auftragstatic = AUFTRAG:NewBAI(setStatic, 25000)
 	auftrag:SetWeaponExpend(AI.Task.WeaponExpend.ONE)
 	auftragstatic:SetEngageAsGroup(false)
@@ -152,4 +156,11 @@ end
             end
 
 
-
+--react to chat??
+     trigger.action.addOtherEvent(function(event)
+        if event.id == world.event.S_EVENT_PLAYER_CHAT and event.text and event.text == "-clearmap" then
+            logInfo("Manual cleaning command received via chat")
+            trigger.action.outText("[MAP CLEANER] Running manual map cleaning!", 10)
+            MapCleaner.performCleanup()
+        end
+    end)           

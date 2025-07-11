@@ -48,15 +48,29 @@ function HC:Start()
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
         HC:T("Initializing campaign")
-        local airbases = AIRBASE.GetAllAirbases()
-        for i=1, #(airbases) do
-            local ab = airbases[i]
-            if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
-                --RED and BLUE bases will be considered as strategic zones, everything else will be ignored
-                local abi = AIRBASEINFO:NewFromAIRBASE(ab, 100)
-                table.insert(HC.ActiveAirbases, abi)
-            end
+        --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones
+        local wpGroup = GROUP:FindByName("WP_TEMPLATE")
+        local route = wpGroup:GetTemplateRoutePoints()
+        local wpList = {}
+        for k, v in pairs(route) do
+            table.insert(wpList, k, {x = v.x, y=v.y})
         end
+        wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
+        local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterOnce() --get only red and blue, ignore neutral
+        bases:ForEachAirbase(
+            function(b)
+                local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
+                for i=1, #wpList do
+                    local zone = b.AirbaseZone
+                    if (zone:IsVec2InZone(wpList[i])) then
+                        abi.WPIndex = i
+                        table.insert(HC.ActiveAirbases, abi)
+                        env.info(b:GetName().." assigned index "..tostring(i))
+                        break
+                    end
+                end
+            end
+        )
         --save to file
         HC:SaveTable(HC.ActiveAirbases, basePath..filename)
     else

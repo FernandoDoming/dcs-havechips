@@ -244,7 +244,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetGrouping(2)
                 squadron:SetModex(10)
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90)
-                squadron:SetMissionRange(80).
+                squadron:SetMissionRange(80)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
                 airwing:AddSquadron(squadron)
@@ -303,27 +303,27 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
 
     if (hp <= 20) then
         garrison = { BASE = 1, SHORAD = 0, SAM = 0, ARMOR = 0 }
-    elseif (HP > 20 and hp <= 40) then
+    elseif (hp > 20 and hp <= 40) then
         garrison = { BASE = 1, SHORAD = 1, SAM = 0, ARMOR = 0 }
         if (isFrontline) then
             garrison.ARMOR = 1
         end
-    elseif (HP > 40 and hp <= 60) then        
+    elseif (hp > 40 and hp <= 60) then        
         garrison = { BASE = 1, SHORAD = 2, SAM = 0, ARMOR = 0 }
         if (isFrontline) then
             garrison.ARMOR = 1
         end
-    elseif (HP > 60 and hp <= 80) then
+    elseif (hp > 60 and hp <= 80) then
         garrison = { BASE = 1, SHORAD = 2, SAM = 1, ARMOR = 0 }
         if (isFrontline) then
             garrison.ARMOR = 1
         end
-    elseif (HP > 80 and hp <= 90) then
+    elseif (hp > 80 and hp <= 90) then
         garrison = { BASE = 1, SHORAD = 2, SAM = 2, ARMOR = 0 }
         if (isFrontline) then
             garrison.ARMOR = 2
         end
-    elseif (HP > 90) then
+    elseif (hp > 90) then
         garrison = { BASE = 1, SHORAD = 3, SAM = 3, ARMOR = 0 }
         if (isFrontline) then
             garrison.ARMOR = 2
