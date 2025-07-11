@@ -297,68 +297,98 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     local garrison = {
         BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
         SHORAD = 0, -- short range air defense groups from <SIDE>_SHORAD_TEMPLATES
-        SAM = 0, -- SAM batteries from <SIDE>_SAM_TEMPLATES
-        ARMOR = 0 -- armour defense groups from <SIDE>_TANK_TEMPLATES
+        SAM = 0 -- SAM batteries from <SIDE>_SAM_TEMPLATES
     }
 
     if (hp <= 20) then
-        garrison = { BASE = 1, SHORAD = 0, SAM = 0, ARMOR = 0 }
+        garrison = { BASE = 1, SHORAD = 0, SAM = 0 }
     elseif (hp > 20 and hp <= 40) then
-        garrison = { BASE = 1, SHORAD = 1, SAM = 0, ARMOR = 0 }
-        if (isFrontline) then
-            garrison.ARMOR = 1
-        end
+        garrison = { BASE = 1, SHORAD = 1, SAM = 0 }
     elseif (hp > 40 and hp <= 60) then        
-        garrison = { BASE = 1, SHORAD = 2, SAM = 0, ARMOR = 0 }
-        if (isFrontline) then
-            garrison.ARMOR = 1
-        end
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0 }
     elseif (hp > 60 and hp <= 80) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 1, ARMOR = 0 }
-        if (isFrontline) then
-            garrison.ARMOR = 1
-        end
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1 }
     elseif (hp > 80 and hp <= 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2, ARMOR = 0 }
-        if (isFrontline) then
-            garrison.ARMOR = 2
-        end
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 3, ARMOR = 0 }
-        if (isFrontline) then
-            garrison.ARMOR = 2
-        end
+        garrison = { BASE = 1, SHORAD = 3, SAM = 3}
+
     end
 
     --Add a security detachment to base
     --find a random zone inside airbase zone and spawn base defense
     --todo: track used zones to prevent spawning groups on top of each other
-    local childZones = HC:GetChildZones(ab.AirbaseZone)
-    local childZonesCount = #(childZones)
-    local unitAlias = string.format("Base security detachment %s", ab:GetName())
+    local childZonesSet = HC:GetChildZonesSet(ab.AirbaseZone)
 
-    if(childZonesCount > 0) then
-        local baseSecurity = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
+    for i=1, garrison.BASE do
+        local randomZone = childZonesSet:GetRandomZone(10)
+        if (not randomZone) then
+            HC:W(string.format("[%s] Couldn't find child spawn zone bor BASE GARRISON", ab:GetName()))
+            break
+        end
+        local unitAlias = string.format("%s D SECURITY %d", ab:GetName(), i)
+        local spawn = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
-                HC:T(string.format("Spawned base security %s at %s", grp:GetName(), ab:GetName()))
+                HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
+                grp:HandleEvent( EVENTS.UnitLost )
                 function grp:OnEventUnitLost(e)
                     env.info("Group"..self:GetName().." lost a unit")            
                 end
             end
         )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
-        :InitRandomizeZones( childZones )
-        local bsGroup = baseSecurity:Spawn()
-        bsGroup:HandleEvent( EVENTS.UnitLost )
-        function bsGroup:OnEventUnitLost(e)
-            env.info("Group"..self:GetName().." lost a unit")            
-        end
+        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+        childZonesSet:RemoveZonesByName(randomZone:GetName())
+        chief:AddAgent(group)
+    end
 
-        chief:AddAgent(bsGroup)
-    else
-        HC:W(string.format("No child spawn zones found at %s , base will not be defended", ab:GetName()))
-    end    
+    for i=1, garrison.SHORAD do
+        local randomZone = childZonesSet:GetRandomZone(10)
+        if (not randomZone) then
+            HC:W(string.format("[%s] Couldn't find child spawn zone for SHORAD", ab:GetName()))
+            break
+        end
+        local unitAlias = string.format("%s D SHORAD %d", ab:GetName(), i)
+        local spawn = SPAWN:NewWithAlias(templates.SHORAD[1], unitAlias)
+        :OnSpawnGroup(
+            function(grp)
+                HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
+                grp:HandleEvent( EVENTS.UnitLost )
+                function grp:OnEventUnitLost(e)
+                    env.info("Group"..self:GetName().." lost a unit")            
+                end
+            end
+        )
+        :InitRandomizeTemplate(templates.SHORAD)
+        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+        childZonesSet:RemoveZonesByName(randomZone:GetName())
+        chief:AddAgent(group)
+    end
+
+    for i=1, garrison.SAM do
+        local randomZone = childZonesSet:GetRandomZone(10)
+        if (not randomZone) then
+            HC:W(string.format("[%s] Couldn't find child spawn zone for SAM", ab:GetName()))
+            break
+        end
+        local unitAlias = string.format("%s D SAM %d", ab:GetName(), i)
+        local spawn = SPAWN:NewWithAlias(templates.SAM[1], unitAlias)
+        :OnSpawnGroup(
+            function(grp)
+                HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
+                grp:HandleEvent( EVENTS.UnitLost )
+                function grp:OnEventUnitLost(e)
+                    env.info("Group"..self:GetName().." lost a unit")            
+                end
+            end
+        )
+        :InitRandomizeTemplate(templates.SAM)
+        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+        childZonesSet:RemoveZonesByName(randomZone:GetName())
+        chief:AddAgent(group)
+
+    end
 end
 
 --Creates MOOSE CHIEF object

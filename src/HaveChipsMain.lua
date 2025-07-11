@@ -23,7 +23,7 @@ HC = {
     LONG_TICK_TIMER = nil, -- reference to timer
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
     LONG_TICK_INTERVAL = 120, --long tick timer interval in seconds 
-    AIRBASE_LABELS = {}
+    OCCUPIED_ZONES = {}
 
 }
 env.info(string.format("HaveChips %s loading ", HC.VERSION))

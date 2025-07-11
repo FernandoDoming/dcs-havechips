@@ -18,18 +18,45 @@ function HC:E(message)
 end
 
 --Returns a list of zones which are inside specified "parent" zone
---Function is used to find a pre-determined spawn locations around bases
---@param #string zone Parent zone name
+--Function is used to find pre-determined spawn locations around base perimeter
+--@param ZONE Parent zone
 --@return #table table of child zones
 function HC:GetChildZones(parent)
     local chilldZones = {}
     for _, zone in pairs(_DATABASE.ZONES) do
         local childVec3 = zone:GetVec3()
-        if (parent:IsVec3InZone(childVec3)) then
+        if (parent:IsVec3InZone(childVec3) 
+            and parent:GetName() ~= zone:GetName()) then --exclude the situation where parent is returned alongside its child zones
             table.insert(chilldZones, zone)
         end
     end
     return chilldZones
+end    
+
+--Returns a SET_ZONE containing zones which are inside specified "parent" zone
+--Function is used to find pre-determined spawn locations around base perimeter
+--@param ZONE Parent zone
+--@return SET_ZONE of child zones
+function HC:GetChildZonesSet(parent)
+    local childZones = HC:GetChildZones(parent)
+    local zoneSet = SET_ZONE:New()
+    for _, zone in pairs(childZones) do
+        zoneSet:AddZone(zone)
+    end
+    return zoneSet
+end    
+
+--Gets a random child zone from specified parent
+--Function is used to find a pre-determined spawn location around base perimeter
+--@param ZONE Parent zone
+--@return A random child zone for specified parent
+function HC:GetRandomChildZone(parent)
+    local cz = HC:GetChildZones(parent)
+    if (#cz > 0) then
+        return cz[math.random(#cz)]
+    else
+        return nil
+    end
 end    
 
 --Checks if an airbase is close to frontline
