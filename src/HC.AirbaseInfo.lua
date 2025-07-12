@@ -90,7 +90,7 @@ function AIRBASEINFO:DrawLabel()
             local pos = target:GetCoordinate()
             local thisZone = ZONE:FindByName(self.Name)
             if (thisZone:IsVec3InZone(pos)) then
-                missionListText = missionListText..string.format("AI %s \n", mission.missionTask)
+                missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
             end
         end
     end

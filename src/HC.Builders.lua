@@ -228,6 +228,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             --Time to get ready again, time to repair per life point taken
             squadron:SetTurnoverTime(10, 0) --maintenance time, repair time [minutes]
             airwing:AddSquadron(squadron)
+            --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
             local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
     end
@@ -242,6 +243,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
+            --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
             local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
     end
@@ -257,6 +259,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
                 airwing:AddSquadron(squadron)
+                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                 local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                 airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
         end
@@ -270,6 +273,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
+                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                 local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                 airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
         end
@@ -283,6 +287,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
+                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                 local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                 airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
@@ -296,6 +301,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
                 airwing:AddSquadron(squadron)
+                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                 local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                 airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
