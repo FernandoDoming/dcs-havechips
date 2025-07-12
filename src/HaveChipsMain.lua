@@ -41,6 +41,7 @@ function HC:Start()
     HC.ActiveAirbases ={}
     local basePath = lfs.writedir().."Missions\\havechips\\"
     local filename = "airbases.json"
+    local wpGroup = GROUP:FindByName("WP_TEMPLATE")
     ----------------------------------------------------------------------------------------------------------
     --                      Initialize campaign state or load progress
     ----------------------------------------------------------------------------------------------------------
@@ -48,8 +49,7 @@ function HC:Start()
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
         HC:T("Initializing campaign")
-        --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones
-        local wpGroup = GROUP:FindByName("WP_TEMPLATE")
+        --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones        
         local route = wpGroup:GetTemplateRoutePoints()
         local wpList = {}
         for k, v in pairs(route) do
@@ -76,6 +76,7 @@ function HC:Start()
         --save to file
         HC:SaveTable(HC.ActiveAirbases, basePath..filename)
     else
+        wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
         --Campaign is in progress, we need to load the data
         HC:T("Loading campaign progress")
         local success = false
