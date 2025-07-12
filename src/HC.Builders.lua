@@ -169,6 +169,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local side = string.upper(airbase:GetCoalitionName())
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
+    local airbaseStorage = STORAGE:FindByName(airbase:GetName())
     --Ground units
     local brigade=BRIGADE:New(warehouse:GetName(), side.." brigade "..airbase:GetName())
     for i=1, #(templates.LIGHT_INFANTRY) do
@@ -215,7 +216,9 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     airwing:SetAirbase(airbase)
     airwing:SetVerbosity(0) --set to 0 to prevent large number of trace messages in log
     airwing:SetRespawnAfterDestroyed(7200) --two hours to respawn if destroyed
+    
     for i=1, #(templates.TRANSPORT_HELI) do
+            local templateGroupName = templates.TRANSPORT_HELI[i]
             local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
             squadron:SetGrouping(1) -- 1 aircraft per group.
@@ -225,8 +228,11 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             --Time to get ready again, time to repair per life point taken
             squadron:SetTurnoverTime(10, 0) --maintenance time, repair time [minutes]
             airwing:AddSquadron(squadron)
+            local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+            airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
     end
     for i=1, #(templates.ATTACK_HELI) do
+            local templateGroupName = templates.ATTACK_HELI[i]
             local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 2, string.format("%s Attack Helicopter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetGrouping(2)
             squadron:SetModex(30)
@@ -236,10 +242,13 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
+            local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+            airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME) then
         for i=1, #(templates.CAP) do
+                local templateGroupName = templates.CAP[i]
                 local squadron=SQUADRON:New(templates.CAP[i], 2, string.format("%s Fighter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(10)
@@ -248,8 +257,11 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
                 airwing:AddSquadron(squadron)
+                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
         end
         for i=1, #(templates.CAS) do
+                local templateGroupName = templates.CAS[i]
                 local squadron=SQUADRON:New(templates.CAS[i], 2, string.format("%s Attack Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(30)
@@ -258,8 +270,11 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
+                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
         end
         for i=1, #(templates.STRIKE) do
+                local templateGroupName = templates.STRIKE[i]
                 local squadron=SQUADRON:New(templates.STRIKE[i], 2, string.format("%s Strike Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(50)
@@ -268,8 +283,11 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
                 airwing:AddSquadron(squadron)
+                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
             for i=1, #(templates.SEAD) do
+                local templateGroupName = templates.SEAD[i]
                 local squadron=SQUADRON:New(templates.SEAD[i], 1, string.format("%s SEAD Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(60)
@@ -278,6 +296,8 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 squadron:SetTurnoverTime(10, 0)
                 airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
                 airwing:AddSquadron(squadron)
+                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
     end    
     chief:AddAirwing(airwing) 

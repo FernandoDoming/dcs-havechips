@@ -1,1 +1,158 @@
-[{"Coalition":1,"HP":100,"Name":"Pobeda","WPIndex":17},{"Coalition":2,"HP":100,"Name":"Kuweires","WPIndex":24},{"Coalition":1,"HP":100,"Name":"Rayak","WPIndex":5},{"Coalition":2,"HP":100,"Name":"Victory","WPIndex":16},{"Coalition":2,"HP":100,"Name":"Minakh","WPIndex":23},{"Coalition":2,"HP":100,"Name":"Gaziantep","WPIndex":22},{"Coalition":1,"HP":100,"Name":"Marj Ruhayyil","WPIndex":2},{"Coalition":1,"HP":100,"Name":"Sayqal","WPIndex":6},{"Coalition":2,"HP":100,"Name":"Incirlik","WPIndex":21},{"Coalition":1,"HP":100,"Name":"Damascus","WPIndex":3},{"Coalition":1,"HP":100,"Name":"Rene Mouawad","WPIndex":9},{"Coalition":2,"HP":100,"Name":"Bassel Al-Assad","WPIndex":15},{"Coalition":1,"HP":100,"Name":"Mezzeh","WPIndex":4},{"Coalition":1,"HP":100,"Name":"Deir ez-Zor","WPIndex":27},{"Coalition":1,"HP":100,"Name":"Wujah Al Hajar","WPIndex":8},{"Coalition":2,"HP":100,"Name":"Jirah","WPIndex":25},{"Coalition":1,"HP":100,"Name":"Palmyra","WPIndex":13},{"Coalition":1,"HP":100,"Name":"Al Qusayr","WPIndex":10},{"Coalition":1,"HP":100,"Name":"Shayrat","WPIndex":11},{"Coalition":1,"HP":100,"Name":"Hama","WPIndex":14},{"Coalition":2,"HP":100,"Name":"Hatay","WPIndex":20},{"Coalition":2,"HP":100,"Name":"Abu al-Duhur","WPIndex":18},{"Coalition":2,"HP":100,"Name":"Tabqa","WPIndex":26},{"Coalition":1,"HP":100,"Name":"Tiyas","WPIndex":12},{"Coalition":1,"HP":100,"Name":"An Nasiriyah","WPIndex":7},{"Coalition":2,"HP":100,"Name":"Taftanaz","WPIndex":19}]
+[
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Pobeda",
+        "WPIndex": 17
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Kuweires",
+        "WPIndex": 24
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Rayak",
+        "WPIndex": 5
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Victory",
+        "WPIndex": 16
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Minakh",
+        "WPIndex": 23
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Gaziantep",
+        "WPIndex": 22
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Marj Ruhayyil",
+        "WPIndex": 2
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Sayqal",
+        "WPIndex": 6
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Incirlik",
+        "WPIndex": 21
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Damascus",
+        "WPIndex": 3
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Rene Mouawad",
+        "WPIndex": 9
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Bassel Al-Assad",
+        "WPIndex": 15
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Mezzeh",
+        "WPIndex": 4
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Deir ez-Zor",
+        "WPIndex": 27
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Wujah Al Hajar",
+        "WPIndex": 8
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Jirah",
+        "WPIndex": 25
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Palmyra",
+        "WPIndex": 13
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Al Qusayr",
+        "WPIndex": 10
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Shayrat",
+        "WPIndex": 11
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Hama",
+        "WPIndex": 14
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Hatay",
+        "WPIndex": 20
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Abu al-Duhur",
+        "WPIndex": 18
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Tabqa",
+        "WPIndex": 26
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "Tiyas",
+        "WPIndex": 12
+    },
+    {
+        "Coalition": 1,
+        "HP": 70,
+        "Name": "An Nasiriyah",
+        "WPIndex": 7
+    },
+    {
+        "Coalition": 2,
+        "HP": 70,
+        "Name": "Taftanaz",
+        "WPIndex": 19
+    }
+]

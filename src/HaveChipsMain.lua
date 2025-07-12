@@ -230,8 +230,12 @@ function HC:AirbaseResupply(resupplyPercent)
 end    
 
 function HC:OnShortTick()
-   local z = OPSZONE:FindByName("FARP Pobeda") 
-   env.info("...")
+    for i=1, #(HC.ActiveAirbases) do
+        local abi = HC.ActiveAirbases[i]
+        local ab = AIRBASE:FindByName(abi.Name)
+        abi.Coalition = ab:GetCoalition()
+        abi:DrawLabel()
+    end
 end
 
 function HC:OnLongTick()
