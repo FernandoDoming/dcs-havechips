@@ -115,9 +115,57 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
         position = whSpawnZone:GetPointVec2()
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
     end
+
+    if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
+        HC:SetupFARPSupportUnits(airbase)
+    end
+
     return warehouse
 end
 
+--Spawns FARP support units necessary for functional FARP
+--@param AIRBASE farp
+function HC:SetupFARPSupportUnits(farp)
+    local farpStatic = STATIC:FindByName(farp:GetName(), false)
+    if (not farpStatic) then
+        HC:W(string.format("STATIC not found, Cam't spawn FARP support units at %s", farp:GetName()))
+        return
+    end
+    local farpStatic = STATIC:FindByName(farp:GetName(), false)
+    local radius = 50
+    local spacing = 80
+    local farplocation = farpStatic:GetCoordinate()
+    -- Spawn Objects
+    local FARPSupportObjects = {
+        FUEL = { TypeName = "FARP Fuel Depot", ShapeName = "GSM Rus", Category = "Fortifications"},
+        AMMO = { TypeName = "FARP Ammo Dump Coating", ShapeName = "SetkaKP", Category = "Fortifications"},
+        TENT = { TypeName = "FARP Tent", ShapeName = "PalatkaB", Category = "Fortifications"},
+        WINDSOCK  = { TypeName = "Windsock", ShapeName = "H-Windsock_RW", Category = "Fortifications"}
+    }
+    
+    local posAmmo = farplocation:Translate(radius,farpStatic:GetHeading())
+    local posWindsock = farplocation:Translate(radius + 20,farpStatic:GetHeading())
+    local posFuel = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()+90)
+    local posTent = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()-90)
+    
+    local ammoObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.AMMO.TypeName,FARPSupportObjects.AMMO.Category,farpStatic:GetCountry())
+    --ammoObj:InitShape(_object.ShapeName)
+    ammoObj:InitHeading(farpStatic:GetHeading())
+    ammoObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farp:GetName().." AMMO")
+    
+    local fuelObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.FUEL.TypeName,FARPSupportObjects.FUEL.Category,farpStatic:GetCountry())
+    fuelObj:InitHeading(farpStatic:GetHeading())
+    fuelObj:SpawnFromCoordinate(posFuel,farpStatic:GetHeading(),farp:GetName().." FUEL")
+    
+    local tentObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.TENT.TypeName,FARPSupportObjects.TENT.Category,farpStatic:GetCountry())
+    tentObj:InitHeading(farpStatic:GetHeading())
+    tentObj:SpawnFromCoordinate(posTent,farpStatic:GetHeading(),farp:GetName().." TENT")
+
+    local windsockObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.WINDSOCK.TypeName,FARPSupportObjects.WINDSOCK.Category,farpStatic:GetCountry())
+    windsockObj:InitHeading(farpStatic:GetHeading())
+    windsockObj:SpawnFromCoordinate(posWindsock,farpStatic:GetHeading(),farp:GetName().." WINDSOCK")
+
+end    
 --Sets up airbase inventory, aircraft and weapon availability, this is required to limit airframe availability, note that it applies to AI CHIEF and human players
 --Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
 --@param #AIRBASE airbase to set up

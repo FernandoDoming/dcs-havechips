@@ -28,126 +28,6 @@ HC = {
 }
 env.info(string.format("HaveChips %s loading ", HC.VERSION))
 
---Loads current campaign state and starts ResumeCampaign() when data is ready
---This is the main entry point to HC
-function HC:Start()
-    --Initialize group templates, we will need them later
-    HC:InitGroupTemplates()
-    --Create MOOSE CHIEFS, we will need them later
-    HC.RED.CHIEF = HC:CreateChief("red", "Zhukov")
-    HC.BLUE.CHIEF = HC:CreateChief("blue", "McArthur")
-    --Initialize inventory templates, we will need them later
-    HC:InitInventoryTemplates()
-    HC.ActiveAirbases ={}
-    local basePath = lfs.writedir().."Missions\\havechips\\"
-    local filename = "airbases.json"
-    local wpGroup = GROUP:FindByName("WP_TEMPLATE")
-    ----------------------------------------------------------------------------------------------------------
-    --                      Initialize campaign state or load progress
-    ----------------------------------------------------------------------------------------------------------
-    if(not HC:FileExists(basePath..filename)) then
-    --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
-    --everything else will be ignored
-        HC:T("Initializing campaign")
-        --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones        
-        local route = wpGroup:GetTemplateRoutePoints()
-        local wpList = {}
-        for k, v in pairs(route) do
-            table.insert(wpList, k, {x = v.x, y=v.y})
-        end
-        wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
-        --local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({Airbase.Category.HELIPAD, Airbase.Category.AIRDROME}):FilterOnce() --get only red and blue, ignore neutral
-        local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({"helipad", "airdrome"}):FilterOnce() --get only red and blue, ignore neutral
-        bases:ForEachAirbase(
-            function(b)
-                env.info("Checking base "..b:GetName())
-                local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
-                for i=1, #wpList do
-                    local zone = b.AirbaseZone
-                    if (zone:IsVec2InZone(wpList[i])) then
-                        abi.WPIndex = i
-                        table.insert(HC.ActiveAirbases, abi)
-                        env.info(b:GetName().." assigned index "..tostring(i))
-                        break
-                    end
-                end
-            end
-        )
-        --save to file
-        HC:SaveTable(HC.ActiveAirbases, basePath..filename)
-    else
-        wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
-        --Campaign is in progress, we need to load the data
-        HC:T("Loading campaign progress")
-        local success = false
-        local data = {}
-        success, data = HC:LoadTable(basePath..filename)        
-        if(success) then
-            HC:T("Table loaded from file "..basePath..filename)
-            for i=1, #data do
-                table.insert(HC.ActiveAirbases, AIRBASEINFO:NewFromTable(data[i]))
-            end
-        else
-            HC:W("Could not load table from file "..basePath..filename)
-        end
-    end
-    ----------------------------------------------------------------------------------------------------------
-    --                                      Campaign state loaded
-    ----------------------------------------------------------------------------------------------------------
-    --Now we have a table of active airbases, we can now populate those airbases
-    --set their coalition and state of combat effectivenes
-    for i=1, #(HC.ActiveAirbases) do
-        local abi = HC.ActiveAirbases[i]
-        local ab = AIRBASE:FindByName(abi.Name)
-        ab:SetCoalition(abi.Coalition)
-        
-        local abZone = ZONE_AIRBASE:New(ab:GetName())
-        local opsZone = OPSZONE:New(abZone)   
-        opsZone:SetMarkZone(true)
-        opsZone:SetDrawZone(true)   
-        function opsZone:OnAfterEmpty(From, Event, To)
-            HC.OnZoneEmpty(HC, From, Event, To, self)
-        end
-        local isFrontline = HC:IsFrontlineAirbase(ab)
-        local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
-
-        --setup base available airframes and weapons based on templates
-        HC:SetupAirbaseInventory(ab) 
-        if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
-            --opsZone:SetDrawZone(false)             
-            local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)            
-            --add AI units to base to be used by CHIEF
-            HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
-            --spawn base defense units
-            HC:SetupAirbaseDefense(ab, abi.HP, isFrontline)
-            opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
-            opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT) --and only ground units can capture zone
-            --abi:DrawLabel()
-        end
-        ab:SetAutoCaptureON()
-
-        --Customize chief's response to strategic zones
-        local red_empty, red_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
-        HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, red_occupied, red_empty)
-
-        local blue_empty, blue_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
-        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, blue_occupied, blue_empty)
-    end
-
-    --Periodic calls
-    HC.SHORT_TICK_TIMER = TIMER:New(HC.OnShortTick, HC)
-    HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
-    HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
-    HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
-    --Event handlers
-    HC.onKillHandler = EVENTHANDLER:New()
-    HC.onKillHandler:HandleEvent( EVENTS.Kill )
-    function HC.onKillHandler:OnEventKill(e )
-        HC:OnUnitKilled(e)
-    end
-    HC.BLUE.CHIEF:__Start(1)
-    HC:T("Startup completed")
-end
 
 function HC:OnZoneEmpty(From, Event, To, opsZone)
     env.warning("*************** ZONE ".."".." IS EMPTY ******************")
@@ -204,6 +84,7 @@ end
 
 function HC:EndMission()
     --ToDo: save state
+    
 end
 
 function HC:SaveCampaignState()
@@ -245,7 +126,124 @@ function HC:OnLongTick()
     HC:AirbaseResupply(resupplyPercent) 
 end
 
---HC.RED.CHIEF:__Start(1)
---HC.BLUE.CHIEF:__Start(10)
+--Loads current campaign state and starts ResumeCampaign() when data is ready
+--This is the main entry point to HC
+function HC:Start()
+    --Initialize group templates, we will need them later
+    HC:InitGroupTemplates()
+    --Create MOOSE CHIEFS, we will need them later
+    HC.RED.CHIEF = HC:CreateChief("red", "Zhukov")
+    HC.BLUE.CHIEF = HC:CreateChief("blue", "McArthur")
+    --Initialize inventory templates, we will need them later
+    HC:InitInventoryTemplates()
+    HC.ActiveAirbases ={}
+    local basePath = lfs.writedir().."Missions\\havechips\\"
+    local filename = "airbases.json"
+    local wpGroup = GROUP:FindByName("WP_TEMPLATE")
+    ----------------------------------------------------------------------------------------------------------
+    --                      Initialize campaign state or load progress
+    ----------------------------------------------------------------------------------------------------------
+    if(not HC:FileExists(basePath..filename)) then
+    --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
+    --everything else will be ignored
+        HC:T("Initializing campaign")
+        --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones        
+        local route = wpGroup:GetTemplateRoutePoints()
+        local wpList = {}
+        for k, v in pairs(route) do
+            table.insert(wpList, k, {x = v.x, y=v.y})
+        end
+        wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
+        --local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({Airbase.Category.HELIPAD, Airbase.Category.AIRDROME}):FilterOnce() --get only red and blue, ignore neutral
+        local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({"helipad", "airdrome"}):FilterOnce() --get only red and blue, ignore neutral
+        bases:ForEachAirbase(
+            function(b)
+                env.info("Checking base "..b:GetName())
+                local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
+                for i=1, #wpList do
+                    local zone = b.AirbaseZone
+                    if (zone:IsVec2InZone(wpList[i])) then
+                        abi.WPIndex = i
+                        table.insert(HC.ActiveAirbases, abi)
+                        env.info(b:GetName().." assigned index "..tostring(i))
+                        break
+                    end
+                end
+            end
+        )
+        --save to file
+        HC:SaveTable(HC.ActiveAirbases, basePath..filename)
+    else
 
+        wpGroup:Destroy() --we don't need the waypoints template group it anyway, we loaded waypoints from JSON file
+        --Campaign is in progress, we need to load the data
+        HC:T("Loading campaign progress")
+        local success = false
+        local data = {}
+        success, data = HC:LoadTable(basePath..filename)        
+        if(success) then
+            HC:T("Table loaded from file "..basePath..filename)
+            for i=1, #data do
+                table.insert(HC.ActiveAirbases, AIRBASEINFO:NewFromTable(data[i]))
+            end
+        else
+            HC:W("Could not load table from file "..basePath..filename)
+        end
+    end
+    ----------------------------------------------------------------------------------------------------------
+    --                                      Campaign state loaded
+    ----------------------------------------------------------------------------------------------------------
+    --Now we have a table of active airbases, we can now populate those airbases
+    --set their coalition and state of combat effectivenes
+    for i=1, #(HC.ActiveAirbases) do
+        local abi = HC.ActiveAirbases[i]
+        local ab = AIRBASE:FindByName(abi.Name)
+        ab:SetCoalition(abi.Coalition)        
+        local abZone = ZONE_AIRBASE:New(ab:GetName())
+        local opsZone = OPSZONE:New(abZone)   
+        opsZone:SetMarkZone(true)
+        opsZone:SetDrawZone(true)   
+        function opsZone:OnAfterEmpty(From, Event, To)
+            HC.OnZoneEmpty(HC, From, Event, To, self)
+        end
+        local isFrontline = HC:IsFrontlineAirbase(ab)
+        local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
+
+        --setup base available airframes and weapons based on templates
+        HC:SetupAirbaseInventory(ab) 
+        if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
+            --opsZone:SetDrawZone(false)             
+            local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)            
+            --add AI units to base to be used by CHIEF
+            HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
+            --spawn base defense units
+            HC:SetupAirbaseDefense(ab, abi.HP, isFrontline)
+            opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
+            opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT) --and only ground units can capture zone
+            --abi:DrawLabel()
+        end
+        ab:SetAutoCaptureON()
+
+        --Customize chief's response to strategic zones
+        local red_empty, red_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
+        HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, red_occupied, red_empty)
+
+        local blue_empty, blue_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
+        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, blue_occupied, blue_empty)
+    end
+
+    --Periodic calls
+    HC.SHORT_TICK_TIMER = TIMER:New(HC.OnShortTick, HC)
+    HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
+    HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
+    HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
+    --Event handlers
+    HC.onKillHandler = EVENTHANDLER:New()
+    HC.onKillHandler:HandleEvent( EVENTS.Kill )
+    function HC.onKillHandler:OnEventKill(e )
+        HC:OnUnitKilled(e)
+    end
+    HC.BLUE.CHIEF:__Start(1)
+    HC:T("Startup completed")
+end
 env.info(string.format("HaveChips main loaded ", HC.VERSION))

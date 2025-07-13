@@ -23,9 +23,6 @@
             "path": "."
         },
         {
-            "path": "../../Scripts/MOOSE/Moose Development/Moose"
-        },
-        {
             "path": "../MOOSE_MISSIONS"
         }
     ]
