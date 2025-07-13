@@ -23,6 +23,7 @@ function HC:GetTemplateGroupNames(side, missionType)
     local allGroups = SET_GROUP:New():FilterCoalitions(string.lower(side), false):FilterActive(false):FilterOnce()
     allGroups:ForEachGroup(
         function(g)
+            HC:T(string.format("%s template checking %s ", g:GetName(), templateZone:GetName()))
             --Get first unit in group, if in specified zone then add to templates, not perfect but it works
             if (templateZone:IsVec3InZone(g:GetUnits()[1]:GetVec3())) then
                 HC:T(g.GroupName.." added to " ..side.." templates ".. missionType)
@@ -105,7 +106,7 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
         --spawn a warehouse in one of the airbase perimeter child zones which provide safe place for spawning
         local childZoneSet = HC:GetChildZonesSet(airbase.AirbaseZone, true)
         if (childZoneSet:Count() == 0) then
-            HC:W(string.format("[%s] Couldn't find child spawn zone bor warehouse...will spawn in airbase zone...", airbase:GetName()))          
+            HC:W(string.format("[%s] Couldn't find child spawn zone for warehouse...will spawn in random place...", airbase:GetName()))          
         else
             randomZone = childZoneSet:GetRandomZone(10)
             position = randomZone:GetPointVec2()
@@ -221,8 +222,34 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
     local airbaseStorage = STORAGE:FindByName(airbase:GetName())
+    --check chief units, remove if legions already exist
+    local brigadeName = string.format("%s Brigade %s", side, airbase:GetName())
+    local airwingName = string.format("%s Air wing %s", side, airbase:GetName())
+    for _, legion in pairs(chief.commander.legions) do
+        if (legion:GetName() == brigadeName) then
+            env.warning("Removed legion "..legion:GetName())
+            chief:RemoveLegion(legion)
+            break
+        end
+    end
+    for _, legion in pairs(chief.commander.legions) do
+        if (legion:GetName() == airwingName) then
+            env.warning("Removed legion "..legion:GetName())
+            chief:RemoveLegion(legion)
+            break
+        end
+    end    
+    -- Finda a safe spawn zone
+    local childZoneSet = HC:GetChildZonesSet(airbase.AirbaseZone, true)
+    local randomZone = airbase.AirbaseZone
+    if (childZoneSet:Count() == 0) then
+        HC:W(string.format("[%s] Couldn't find child spawn zone for brigade...will spawn in random place...", airbase:GetName()))          
+    else
+        randomZone = childZoneSet:GetRandomZone(10)
+        HC:T(string.format("Brigade spawn zone on %s set to %s", airbase:GetName(), randomZone:GetName()))
+    end
     --Ground units
-    local brigade=BRIGADE:New(warehouse:GetName(), side.." brigade "..airbase:GetName())
+    local brigade=BRIGADE:New(warehouse:GetName(), brigadeName)
     for i=1, #(templates.LIGHT_INFANTRY) do
         local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 4, string.format("%s Infantry %d %s", side, i, airbase:GetName()))
         platoon:SetGrouping(4)
@@ -230,7 +257,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
         -- platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
         platoon:SetAttribute(GROUP.Attribute.GROUND_INFANTRY)
-        --platoon:SetMissionRange(25)
+        --platoon:SetMissionRange(5)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.MECHANIZED) do
@@ -251,7 +278,9 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         platoon:SetMissionRange(25)
         brigade:AddPlatoon(platoon)
     end
-    brigade:SetSpawnZone(airbase.AirbaseZone)
+    --brigade:SetSpawnZone(airbase.AirbaseZone)
+    brigade:SetSpawnZone(randomZone)
+    HC.OccupiedSpawnZones[randomZone:GetName()] = true
     chief:AddBrigade(brigade)
     
     --Air unit mission type groups
@@ -259,7 +288,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.RESCUEHELO, AUFTRAG.Type.CTLD}
 
-    local airwing=AIRWING:New(warehouse:GetName(), string.format("%s Air wing %s", side, airbase:GetName()))
+    local airwing=AIRWING:New(warehouse:GetName(), airwingName)
     --airwing:SetTakeoffHot()
     airwing:SetTakeoffAir() --For quicker testing to not have to wait for AI to take off
     airwing:SetDespawnAfterHolding(true)

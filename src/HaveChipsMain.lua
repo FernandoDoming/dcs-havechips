@@ -81,7 +81,6 @@ function HC:OnUnitKilled(e)
     end
 end  
 
-
 function HC:EndMission()
     --ToDo: save state
     
