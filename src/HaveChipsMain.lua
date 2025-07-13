@@ -23,7 +23,7 @@ HC = {
     LONG_TICK_TIMER = nil, -- reference to timer
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
     LONG_TICK_INTERVAL = 120, --long tick timer interval in seconds 
-    OCCUPIED_ZONES = {}
+    OccupiedSpawnZones = {}
 
 }
 env.info(string.format("HaveChips %s loading ", HC.VERSION))
@@ -208,19 +208,19 @@ function HC:Start()
         end
         local isFrontline = HC:IsFrontlineAirbase(ab)
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
-
         --setup base available airframes and weapons based on templates
-        HC:SetupAirbaseInventory(ab) 
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
+            HC:SetupAirbaseInventory(ab)
             --opsZone:SetDrawZone(false)             
-            local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)            
+            local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)
             --add AI units to base to be used by CHIEF
             HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
             --spawn base defense units
             HC:SetupAirbaseDefense(ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
-            opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT) --and only ground units can capture zone
+            opsZone:SetUnitCategories(Unit.Category.GROUND_UNIT) --and only ground units can capture zone            
             --abi:DrawLabel()
+
         end
         ab:SetAutoCaptureON()
 

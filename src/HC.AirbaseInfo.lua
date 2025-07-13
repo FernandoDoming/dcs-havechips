@@ -31,7 +31,7 @@ function AIRBASEINFO:DrawLabel()
     local fillAlpha = 0.7
     local colorText = {1,1,1}
     local textAlpha = 1
-    local textSize = 14
+    local textSize = 12
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
     if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
@@ -76,7 +76,7 @@ function AIRBASEINFO:DrawLabel()
 
     --Possibly could be better to use chief.targetqueue
     local enemyChief = nil
-    local missionListText = " "
+    local missionListText = ""
     if (ab:GetCoalition() == coalition.side.RED) then
         enemyChief = HC.BLUE.CHIEF
     elseif (ab:GetCoalition()  == coalition.side.BLUE) then
@@ -89,13 +89,15 @@ function AIRBASEINFO:DrawLabel()
         if (target) then
             local pos = target:GetCoordinate()
             local thisZone = ZONE:FindByName(self.Name)
-            if (thisZone:IsVec3InZone(pos)) then
-                missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
+            if(mission.missionTask ~= "Nothing") then
+                if (thisZone:IsVec3InZone(pos)) then
+                    missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
+                end                
             end
         end
     end
 
-    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1d %% \n %s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1d %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 --@param #AIRBASE airbase - MOOSE AIRBASE object

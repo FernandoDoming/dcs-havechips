@@ -100,20 +100,20 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
     if( warehouse) then
         HC:W(string.format("Warehouse %s on %s already exists!", warehouseName, airbase:GetName()))
     else
+        local randomZone = airbase.AirbaseZone
+        local position = randomZone:GetRandomPointVec2()
         --spawn a warehouse in one of the airbase perimeter child zones which provide safe place for spawning
-        local childZones = HC:GetChildZones(airbase.AirbaseZone)
-        local childZonesCount = #(childZones)
-        local whspawn = SPAWNSTATIC:NewFromStatic(SIDE.."_WAREHOUSE_TEMPLATE")   
-        local position = airbase:GetZone():GetRandomPointVec2()
-        local whSpawnZone = airbase.AirbaseZone
-        if(childZonesCount > 0) then
-            whSpawnZone = childZones[math.random(childZonesCount)]
-            HC:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), whSpawnZone:GetName()))
+        local childZoneSet = HC:GetChildZonesSet(airbase.AirbaseZone, true)
+        if (childZoneSet:Count() == 0) then
+            HC:W(string.format("[%s] Couldn't find child spawn zone bor warehouse...will spawn in airbase zone...", airbase:GetName()))          
         else
-            HC:T(string.format("No defined child spawn zones found, spawning warehouse on %s in AirbaseZone", airbase:GetName(), airbase:GetName()))
+            randomZone = childZoneSet:GetRandomZone(10)
+            position = randomZone:GetPointVec2()
+            HC:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), randomZone:GetName()))
         end
-        position = whSpawnZone:GetPointVec2()
+        local whspawn = SPAWNSTATIC:NewFromStatic(SIDE.."_WAREHOUSE_TEMPLATE")
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
+        HC.OccupiedSpawnZones[randomZone:GetName()] = true
     end
 
     if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
@@ -167,10 +167,11 @@ function HC:SetupFARPSupportUnits(farp)
 
 end    
 --Sets up airbase inventory, aircraft and weapon availability, this is required to limit airframe availability, note that it applies to AI CHIEF and human players
---Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE 
+--Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE
+--NOTE: this should run before assigning units to chief  otherwise you might deny units to chief
 --@param #AIRBASE airbase to set up
 function HC:SetupAirbaseInventory(airbase)
-    HC:T("Seting up inventory for "..airbase:GetName())
+    HC:T("------------------ Seting up inventory for "..airbase:GetName().." --------------------")
     local targetStorage = STORAGE:FindByName(airbase:GetName())
     local sourceStorage = nil
     local SIDE = string.upper(airbase:GetCoalitionName())
@@ -201,12 +202,14 @@ function HC:SetupAirbaseInventory(airbase)
         end
         --Fill storage from source storage template
         for name,v in pairs(sourceAircraft) do
+            HC:W(string.format("%s %d", name, v))
             targetStorage:SetItem(name, v)
         end
         for name,v in pairs(sourceWeapons) do
             targetStorage:SetItem(name, v)
         end        
     end
+    HC:T("------------------ END Seting up inventory for "..airbase:GetName().." --------------------")
 end
 
 --Garrisons units to be used by chief
@@ -392,7 +395,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     --Add a security detachment to base
     --find a random zone inside airbase zone and spawn base defense
     --todo: track used zones to prevent spawning groups on top of each other
-    local childZonesSet = HC:GetChildZonesSet(ab.AirbaseZone)
+    local childZonesSet = HC:GetChildZonesSet(ab.AirbaseZone, true)
 
     for i=1, garrison.BASE do
         local randomZone = childZonesSet:GetRandomZone(10)
@@ -414,6 +417,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
         childZonesSet:RemoveZonesByName(randomZone:GetName())
+        HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
     end
 
@@ -437,6 +441,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         :InitRandomizeTemplate(templates.SHORAD)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
         childZonesSet:RemoveZonesByName(randomZone:GetName())
+        HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
     end
 
@@ -460,8 +465,8 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         :InitRandomizeTemplate(templates.SAM)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
         childZonesSet:RemoveZonesByName(randomZone:GetName())
+        HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
-
     end
 end
 

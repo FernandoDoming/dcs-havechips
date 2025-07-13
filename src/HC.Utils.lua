@@ -20,14 +20,23 @@ end
 --Returns a list of zones which are inside specified "parent" zone
 --Function is used to find pre-determined spawn locations around base perimeter
 --@param ZONE Parent zone
+--@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
 --@return #table table of child zones
-function HC:GetChildZones(parent)
+function HC:GetChildZones(parent, onlyAvailableForSpawn)
+    onlyAvailableForSpawn = onlyAvailableForSpawn or true
     local chilldZones = {}
     for _, zone in pairs(_DATABASE.ZONES) do
         local childVec3 = zone:GetVec3()
         if (parent:IsVec3InZone(childVec3) 
-            and parent:GetName() ~= zone:GetName()) then --exclude the situation where parent is returned alongside its child zones
-            table.insert(chilldZones, zone)
+            and parent:GetName() ~= zone:GetName() --exclude the situation where parent is returned alongside its child zones
+            ) then 
+            if (onlyAvailableForSpawn) then
+                if (not HC.OccupiedSpawnZones[zone:GetName()]) then
+                    table.insert(chilldZones, zone)  
+                end
+            else
+                table.insert(chilldZones, zone)    
+            end
         end
     end
     return chilldZones
@@ -36,9 +45,11 @@ end
 --Returns a SET_ZONE containing zones which are inside specified "parent" zone
 --Function is used to find pre-determined spawn locations around base perimeter
 --@param ZONE Parent zone
+--@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
 --@return SET_ZONE of child zones
-function HC:GetChildZonesSet(parent)
-    local childZones = HC:GetChildZones(parent)
+function HC:GetChildZonesSet(parent, onlyAvailableForSpawn)
+    onlyAvailableForSpawn = onlyAvailableForSpawn or true
+    local childZones = HC:GetChildZones(parent, onlyAvailableForSpawn)
     local zoneSet = SET_ZONE:New()
     for _, zone in pairs(childZones) do
         zoneSet:AddZone(zone)
@@ -49,9 +60,11 @@ end
 --Gets a random child zone from specified parent
 --Function is used to find a pre-determined spawn location around base perimeter
 --@param ZONE Parent zone
+--@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
 --@return A random child zone for specified parent
-function HC:GetRandomChildZone(parent)
-    local cz = HC:GetChildZones(parent)
+function HC:GetRandomChildZone(parent, onlyAvailableForSpawn)
+    onlyAvailableForSpawn = onlyAvailableForSpawn or true
+    local cz = HC:GetChildZones(parent, onlyAvailableForSpawn)
     if (#cz > 0) then
         return cz[math.random(#cz)]
     else

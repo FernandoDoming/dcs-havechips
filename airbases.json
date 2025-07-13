@@ -7,115 +7,115 @@
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 80,
         "Name": "Kuweires",
         "WPIndex": 24
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 40,
         "Name": "Rayak",
         "WPIndex": 5
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 30,
         "Name": "Victory",
         "WPIndex": 16
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 56,
         "Name": "Minakh",
         "WPIndex": 23
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 88,
         "Name": "Gaziantep",
         "WPIndex": 22
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 25,
         "Name": "Marj Ruhayyil",
         "WPIndex": 2
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 14,
         "Name": "Sayqal",
         "WPIndex": 6
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 8,
         "Name": "Incirlik",
         "WPIndex": 21
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 90,
         "Name": "Damascus",
         "WPIndex": 3
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 95,
         "Name": "Rene Mouawad",
         "WPIndex": 9
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 65,
         "Name": "Bassel Al-Assad",
         "WPIndex": 15
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 40,
         "Name": "Mezzeh",
         "WPIndex": 4
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 40,
         "Name": "Deir ez-Zor",
         "WPIndex": 27
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 35,
         "Name": "Wujah Al Hajar",
         "WPIndex": 8
     },
     {
         "Coalition": 2,
-        "HP": 70,
+        "HP": 26,
         "Name": "Jirah",
         "WPIndex": 25
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 38,
         "Name": "Palmyra",
         "WPIndex": 13
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 66,
         "Name": "Al Qusayr",
         "WPIndex": 10
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 86,
         "Name": "Shayrat",
         "WPIndex": 11
     },
     {
         "Coalition": 1,
-        "HP": 70,
+        "HP": 27,
         "Name": "Hama",
         "WPIndex": 14
     },
