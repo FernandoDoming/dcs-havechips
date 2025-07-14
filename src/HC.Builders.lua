@@ -65,9 +65,9 @@ end
 
 --Initializes inventory templates for airbases, frontline airbases and FARPS
 --Inventory templates are defined by static cargo objects with names 
---<SIDE>_MAIN_INVENTORY for "major" airbases
---<SIDE>_FRONTLINE_INVENTORY for "frontline" airbases
---<SIDE>_FARP_INVENTORY for FARPS
+--[SIDE]_MAIN_INVENTORY for "major" airbases
+--[SIDE]_FRONTLINE_INVENTORY for "frontline" airbases
+--[SIDE]_FARP_INVENTORY for FARPS
 function HC:InitInventoryTemplates()
     HC:T("Initializing inventory templates")
     HC.RED.INVENTORY_TEMPLATES.MAIN = STATIC:FindByName("RED_MAIN_INVENTORY"):GetStaticStorage()
