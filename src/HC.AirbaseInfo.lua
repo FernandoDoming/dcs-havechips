@@ -1,5 +1,6 @@
 env.info("Loading HC.AIRBASEINFO")
 --This class is primarily used to persist airbase state between server restarts and track some extras required for scenario in runtime (markers etc.)
+---@class AIRBASEINFO
 AIRBASEINFO = {
     WPIndex = 99, --Waypoint index
     Name = nil, --Airbase name
@@ -97,7 +98,7 @@ function AIRBASEINFO:DrawLabel()
         end
     end
 
-    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1d %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
 ---Constructor, creates AIRBASE info from AIRBASE object
@@ -106,7 +107,7 @@ end
 ---@return AIRBASEINFO
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     local o = {}
-    WPIndex = 99
+    o.WPIndex = 99
     o.Name = airbase:GetName()
     o.HP = hp or 100
     o.Coalition = airbase:GetCoalition()

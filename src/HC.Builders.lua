@@ -164,7 +164,7 @@ function HC:SetupFARPSupportUnits(farp)
             local spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,farpStatic:GetCountry())
             --spawnObj:InitShape(_object.ShapeName)
             spawnObj:InitHeading(farpStatic:GetHeading())
-            spawnObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farpName..k)            
+            spawnObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farpName.." "..k)            
         end        
     end
 end
@@ -396,12 +396,17 @@ end
 --Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
 ---@param ab AIRBASE target airbase
 ---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
----@param isFrontline boolean If true, base will be considered as fro
+---@param isFrontline boolean? If true, base will be considered as fro
 function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     HC:T("Setting up base defense for "..ab:GetName())    
     local side = string.upper(ab:GetCoalitionName())
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
+    if (isFrontline == nil) then
+        isFrontline = HC:IsFrontlineAirbase(ab)
+    end
+
+
     -- Base defense garrison based on airbase HP
     local garrison = {
         BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
@@ -439,14 +444,14 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         :OnSpawnGroup(
             function(grp)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-                grp:HandleEvent( EVENTS.UnitLost )
-                function grp:OnEventUnitLost(e)
-                    HC:T("Group"..self:GetName().." lost a unit")            
-                end
             end
         )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+        group:HandleEvent(EVENTS.UnitLost)
+        function group:OnEventUnitLost(e)
+            HC:E("One of the units in group was killed?")
+        end
         childZonesSet:RemoveZonesByName(randomZone:GetName())
         HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
@@ -518,7 +523,7 @@ function HC:AirbaseResupply(resupplyPercent)
 end  
 
 --Creates MOOSE CHIEF object
----@param side string "RED" or "BLUE"
+---@param side string RED or BLUE
 ---@param alias string Chief name (optional)
 ---@return CHIEF #MOOSE CHIEF object
 function HC:CreateChief(side, alias)

@@ -14,7 +14,9 @@ function HC:OnLongTick()
 end
 
 --#region ------------------- DCS events -------------------
-function HC.OnEventKill(e)
+
+---@param e EVENTDATA Event data
+function HC:OnEventKill(e)
     HC:W("HC.EVENT OnEventKill")
     --   Unit.Category
     --   AIRPLANE      = 0,
@@ -59,7 +61,7 @@ function HC.OnEventKill(e)
                     local abi = HC.ActiveAirbases[b:GetName()]
                     if (abi) then
                         --placeholder, damage will be calculated based on unit type
-                        abi.HP = abi.HP -5
+                        abi.HP = math.max(0, abi.HP -5)                         
                     end
                 end
             end
@@ -67,57 +69,77 @@ function HC.OnEventKill(e)
     end    
 end
 
-function HC.OnEventBaseCaptured(e)
+---@param e EVENTDATA Event data
+function HC:OnEventBaseCaptured(e)
     HC:W("HC.EVENT OnEventBaseCaptured")
 end
 
-function HC.OnEventDead(e)
+---@param e EVENTDATA Event data
+function HC:OnEventDead(e)
     HC:W("HC.EVENT OnEventDead")
 end
 
-function HC.OnEventMissionEnd(e)
+---@param e EVENTDATA Event data
+function HC:OnEventMissionEnd(e)
     HC:W("HC.EVENT OnEventMissionEnd")
 end
 
-function HC.OnEventPilotDead(e)
+---@param e EVENTDATA Event data
+function HC:OnEventPilotDead(e)
     HC:W("HC.EVENT OnEventPilotDead")
 end
 
-function HC.OnEventShot(e)
+---@param e EVENTDATA Event data
+function HC:OnEventShot(e)
     HC:W("HC.EVENT OnEventShot")
 end
 
-function HC.OnEventBDA(e)
+---@param e EVENTDATA Event data
+function HC:OnEventBDA(e)
     HC:W("HC.EVENT OnEventBDA")
 end
 
-function HC.OnEventTakeoff(e)
+---@param e EVENTDATA Event data
+function HC:OnEventTakeoff(e)
     HC:W("HC.EVENT OnEventTakeoff")
 end
 
-function HC.OnEventEjection(e)
+---@param e EVENTDATA Event data
+function HC:OnEventEjection(e)
     HC:W("HC.EVENT OnEventTakeoff")
 end
 
-function HC.OnEventLandingAfterEjection(e)
+---@param e EVENTDATA Event data
+function HC:OnEventLandingAfterEjection(e)
     HC:W("HC.EVENT OnEventLandingAfterEjection")
 end
 
-function HC.OnEventLand(e)
+---@param e EVENTDATA Event data
+function HC:OnEventLand(e)
     HC:W("HC.EVENT OnEventLand")
 end
 --#endregion
 
 --#region ---------------- OpsZone FSM events --------------
-function HC.OnAfterCaptured(From, Event, To, Coalition, opsZone)
+function HC:OnAfterCaptured(From, Event, To, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterCaptured")
+    local abi = HC.ActiveAirbases[opsZone:GetName()]
+    abi.Coalition = opsZone:GetOwner()
+    abi.HP = 20
+    local airbase = AIRBASE:FindByName(opsZone:GetName())
+    airbase:SetCoalition(abi.Coalition)
+    HC:SetupAirbaseInventory(airbase)
+    local staticWarehouse = HC:SetupAirbaseStaticWarehouse(airbase)
+    HC:SetupAirbaseChiefUnits(staticWarehouse, airbase)
+    HC:SetupAirbaseDefense(airbase, abi.HP)
 end
 
-function HC.OnAfterEmpty(From, Event, To, opsZone)
+function HC:OnAfterEmpty(From, Event, To, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterEmpty")
+    --to do neutralize
 end
 
-function HC.OnAfterAttacked(HC, From, Event, To, AttackerCoalition, self)
+function HC:OnAfterAttacked(HC, From, Event, To, AttackerCoalition, self)
     HC:W("HC.EVENT OPSZONE OnAfterAttacked")
 end
 --#endregion

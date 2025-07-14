@@ -25,7 +25,7 @@ HC = {
     SHORT_TICK_TIMER = nil, --reference to timer
     LONG_TICK_TIMER = nil, -- reference to timer
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
-    LONG_TICK_INTERVAL = 120, --long tick timer interval in seconds 
+    LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds 
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
     EventHandler = {}
 
@@ -60,11 +60,12 @@ function HC:Start()
             table.insert(wpList, k, {x = v.x, y=v.y})
         end
         wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
-        --local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({Airbase.Category.HELIPAD, Airbase.Category.AIRDROME}):FilterOnce() --get only red and blue, ignore neutral
         local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({"helipad", "airdrome"}):FilterOnce() --get only red and blue, ignore neutral
         bases:ForEachAirbase(
             function(b)
                 local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
+                --random HP
+                abi.HP = math.random(80) + 20
                 for i=1, #wpList do
                     local zone = b.AirbaseZone
                     if (zone:IsVec2InZone(wpList[i])) then
@@ -84,15 +85,15 @@ function HC:Start()
         HC:T("Loading campaign progress")
         local success = false
         local data = {}
-        success, data = HC:LoadTable(basePath..filename)        
+        success, data = HC:LoadTable(HC.BASE_PATH..filename)        
         if(success) then
-            HC:T("Table loaded from file "..basePath..filename)
+            HC:T("Table loaded from file "..HC.BASE_PATH..filename)
             for i=1, #data do
                 --table.insert(HC.ActiveAirbases,AIRBASEINFO:NewFromTable(data[i]))
                 HC.ActiveAirbases[data[i].Name] = AIRBASEINFO:NewFromTable(data[i])
             end
         else
-            HC:W("Could not load table from file "..basePath..filename)
+            HC:W("Could not load table from file "..HC.BASE_PATH..filename)
         end
     end
     --#endregion
@@ -150,7 +151,6 @@ function HC:Start()
     --#region ---------- Event handlers -------------
     
     HC.EventHandler = EVENTHANDLER:New()
-    HC.EventHandler:HandleEvent(EVENTS.Kill, HC.OnEventKill)
     HC.EventHandler:HandleEvent(EVENTS.BaseCaptured, HC.OnEventBaseCaptured)
     HC.EventHandler:HandleEvent(EVENTS.Dead, HC.OnEventDead)
     HC.EventHandler:HandleEvent(EVENTS.MissionEnd, HC.OnEventMissionEnd)
@@ -162,6 +162,7 @@ function HC:Start()
     HC.EventHandler:HandleEvent(EVENTS.LandingAfterEjection, HC.OnEventLandingAfterEjection)
     HC.EventHandler:HandleEvent(EVENTS.Ejection, HC.OnEventEjection)
     HC.EventHandler:HandleEvent(EVENTS.Land, HC.OnEventLand)
+    HC.EventHandler:HandleEvent(EVENTS.Kill, HC.OnEventKill)
     --#endregion
     HC.BLUE.CHIEF:__Start(1)
     HC:T("Startup completed")
