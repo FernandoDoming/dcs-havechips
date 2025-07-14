@@ -30,7 +30,7 @@ function HC:GetChildZones(parent, onlyAvailableForSpawn)
             and parent:GetName() ~= zone:GetName() --exclude the situation where parent is returned alongside its child zones
             ) then 
             if (onlyAvailableForSpawn) then
-                if (not HC.OccupiedSpawnZones[zone:GetName()] and string.sub(zone:GetName(), 14) == "Warehouse zone") then
+                if (not HC.OccupiedSpawnZones[zone:GetName()] and string.sub(zone:GetName(), 14) ~= "Warehouse zone") then
                     table.insert(chilldZones, zone)  
                 end
             else
