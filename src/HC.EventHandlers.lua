@@ -72,6 +72,7 @@ end
 ---@param e EVENTDATA Event data
 function HC:OnEventBaseCaptured(e)
     HC:W("HC.EVENT OnEventBaseCaptured")
+    return true
 end
 
 ---@param e EVENTDATA Event data
@@ -123,10 +124,11 @@ end
 --#region ---------------- OpsZone FSM events --------------
 function HC:OnAfterCaptured(From, Event, To, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterCaptured")
+    local airbase = AIRBASE:FindByName(opsZone:GetName())
     local abi = HC.ActiveAirbases[opsZone:GetName()]
     abi.Coalition = opsZone:GetOwner()
     abi.HP = 20
-    local airbase = AIRBASE:FindByName(opsZone:GetName())
+    abi:DrawLabel()
     airbase:SetCoalition(abi.Coalition)
     HC:SetupAirbaseInventory(airbase)
     local staticWarehouse = HC:SetupAirbaseStaticWarehouse(airbase)

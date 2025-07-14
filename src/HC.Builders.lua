@@ -151,21 +151,27 @@ function HC:SetupFARPSupportUnits(farp)
     FARPSupportObjects.WINDSOCK.Position = farplocation:Translate(radius + 20,farpStatic:GetHeading())
 
     local farpName = farp:GetName()
+    local spawnCountry = country.UN_PEACEKEEPERS
+    if(farp:GetCoalition() == coalition.side.RED) then
+        spawnCountry = country.USSR
+    elseif (farp:GetCoalition() == coalition.side.BLUE) then
+        spawnCountry = country.US
+    end
+
     for k,v in pairs(FARPSupportObjects) do
         local current = STATIC:FindByName(farpName.." "..k, false)
+        local spawnObj = nil
         --Object already exists
         if (current) then
-            --if coalition is different from FARP           
-            if(current:GetCountry() ~= farpStatic:GetCountry()) then
-                current:ReSpawn(farpStatic:GetCountry(), 2) --since country/coalition on static seem to be unmutable, we will respawn it to make sure it belongs to the correct coalition
+            --if coalition is different from FARP
+            if(current:GetCoalition() ~= farpStatic:GetCoalition() or not current:IsAlive()) then
+            current:Destroy()
             end
-        --Object does not exist, we have to spawn it
-        else
-            local spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,farpStatic:GetCountry())
-            --spawnObj:InitShape(_object.ShapeName)
-            spawnObj:InitHeading(farpStatic:GetHeading())
-            spawnObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farpName.." "..k)            
-        end        
+        end
+        spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,spawnCountry)
+        --spawnObj:InitShape(_object.ShapeName)
+        spawnObj:InitHeading(farpStatic:GetHeading())
+        spawnObj:SpawnFromCoordinate(v.Position,farpStatic:GetHeading(),farpName.." "..k)
     end
 end
 
