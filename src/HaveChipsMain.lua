@@ -16,6 +16,8 @@ HC = {
             FARP = nil
         }
     },
+    BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
+    PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
     PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour,
     FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
@@ -41,13 +43,12 @@ function HC:Start()
     --Initialize inventory templates, we will need them later
     HC:InitInventoryTemplates()
     HC.ActiveAirbases = {}
-    local basePath = lfs.writedir().."Missions\\havechips\\"
-    local filename = "airbases.json"
+    local filename = HC.PERSIST_FILE_NAME
     local wpGroup = GROUP:FindByName("WP_TEMPLATE")
     ----------------------------------------------------------------------------------------------------------
     --                              Initialize campaign state or load progress
     ----------------------------------------------------------------------------------------------------------
-    if(not HC:FileExists(basePath..filename)) then
+    if(not HC:FileExists(HC.BASE_PATH..filename)) then
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
         HC:T("Initializing campaign")
@@ -75,7 +76,7 @@ function HC:Start()
             end
         )
         --save to file
-        HC:SaveTable(HC.ActiveAirbases, basePath..filename)
+        HC:SaveTable(HC.ActiveAirbases, HC.BASE_PATH..filename)
     else
         ----------------------------------------------------------------------------------------------------------------
         --                                Campaign is in progress, we need to load the data
@@ -233,9 +234,14 @@ function HC:OnLongTick()
     HC:AirbaseResupply(resupplyPercent) 
 end
 
+--Saves scenario state to file
 function HC:SaveCampaignState()
-    --ToDo: Save active airbases
-
+    local filename = HC.PERSIST_FILE_NAME
+    for _, abi in pairs(HC.ActiveAirbases) do
+        local ab = AIRBASE:FindByName(abi.Name)
+        abi.Coalition = ab:GetCoalition() --ensure coalition is up to date
+        HC:SaveTable(HC.ActiveAirbases, HC.BASE_PATH..filename)
+    end
 end      
 
 env.info(string.format("HaveChips main loaded ", HC.VERSION))

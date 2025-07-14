@@ -154,12 +154,12 @@ function HC:SetupFARPSupportUnits(farp)
     for k,v in pairs(FARPSupportObjects) do
         local current = STATIC:FindByName(farpName.." "..k, false)
         --Object already exists
-        if (current) then            
-            if(current:GetCountry() ~= farpStatic:GetCountry()) then
-                --since country/coalition on static seem to be unmutable, we will respawn it to make sure it belongs to the correct coalition
-                current:ReSpawn(farpStatic:GetCountry(), 2)                
+        if (current) then
+            --if coalition is different from FARP or object is destroyed we need to respawn it           
+            if(current:GetCountry() ~= farpStatic:GetCountry() or not current:IsAlive()) then
+                current:ReSpawn(farpStatic:GetCountry(), 2) --since country/coalition on static seem to be unmutable, we will respawn it to make sure it belongs to the correct coalition
             end
-            --Object does not exist, we have to spawn it
+        --Object does not exist, we have to spawn it
         else
             local spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,farpStatic:GetCountry())
             --spawnObj:InitShape(_object.ShapeName)
