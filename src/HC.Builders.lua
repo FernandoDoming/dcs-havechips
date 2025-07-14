@@ -46,11 +46,13 @@ function HC:InitGroupTemplates()
     HC:T("Group templates initialized")
 end
 
---Gets a list of <templatesCount> randomly chosen template group names for specified template category (mission type), see HC.TEMPLATE_CATEGORIES
---@param #string side "RED" or "BLUE"
---@param #string missionType Template zone name part. Pattern is <SIDE>_<missionType>_TEMPLATES, see template zones in mission editor, possible values "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"
---@param templatesCount number of template group names to return
---@return list of template group names that fit the criteria, duplicates are possible
+--Gets a number of randomly chosen template group names for specified template category (mission type), see HC.TEMPLATE_CATEGORIES
+---@param  side string "RED" or "BLUE"
+---@param missionType string Template zone name part. Pattern is [SIDE]_[missionType]_TEMPLATES, see template zones in mission editor.
+---
+--- Possible values "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "SAM", "ATTACK_HELI", "TRANSPORT_HELI"
+---@param templatesCount number Number of template group names to return
+---@return table #Template group names (table of strings) that fit the criteria, duplicates are possible
 function HC:GetRandomTemplates(side, missionType, templatesCount)
     local templates = HC:GetTemplateGroupNames(side, missionType)
     local result = {}
@@ -78,8 +80,7 @@ function HC:InitInventoryTemplates()
 end
 
 --Adds static warehouse to airbase (required by MOOSE CHIEF)
---@param #AIRBASE airbase - MOOSE airbase
---@param AIRBASEINFO abInfo - extended airbase info
+---@param airbase AIRBASE MOOSE airbase
 function HC:SetupAirbaseStaticWarehouse(airbase)
     local SIDE = string.upper(airbase:GetCoalitionName())
     -- Check if we have an enemy warehouse left over from before
@@ -104,17 +105,17 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
         local randomZone = airbase.AirbaseZone
         local position = randomZone:GetRandomPointVec2()
         --spawn a warehouse in one of the airbase perimeter child zones which provide safe place for spawning
-        local childZoneSet = HC:GetChildZonesSet(airbase.AirbaseZone, true)
+        local childZoneSet = HC:GetChildZoneSet(airbase.AirbaseZone, true)
         if (childZoneSet:Count() == 0) then
             HC:W(string.format("[%s] Couldn't find child spawn zone for warehouse...will spawn in random place...", airbase:GetName()))          
         else
             randomZone = childZoneSet:GetRandomZone(10)
             position = randomZone:GetPointVec2()
+            HC.OccupiedSpawnZones[randomZone:GetName()] = true
             HC:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), randomZone:GetName()))
         end
         local whspawn = SPAWNSTATIC:NewFromStatic(SIDE.."_WAREHOUSE_TEMPLATE")
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
-        HC.OccupiedSpawnZones[randomZone:GetName()] = true
     end
 
     if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
@@ -125,52 +126,54 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
 end
 
 --Spawns FARP support units necessary for functional FARP
---@param AIRBASE farp
+---@param farp AIRBASE FARP to set up
 function HC:SetupFARPSupportUnits(farp)
     local farpStatic = STATIC:FindByName(farp:GetName(), false)
     if (not farpStatic) then
-        HC:W(string.format("STATIC not found, Cam't spawn FARP support units at %s", farp:GetName()))
+        HC:W(string.format("FARP STATIC not found, Can't spawn FARP support units at %s", farp:GetName()))
         return
     end
     local farpStatic = STATIC:FindByName(farp:GetName(), false)
     local radius = 50
     local spacing = 80
     local farplocation = farpStatic:GetCoordinate()
-    -- Spawn Objects
+    -- Support objects to spawn
     local FARPSupportObjects = {
-        FUEL = { TypeName = "FARP Fuel Depot", ShapeName = "GSM Rus", Category = "Fortifications"},
-        AMMO = { TypeName = "FARP Ammo Dump Coating", ShapeName = "SetkaKP", Category = "Fortifications"},
-        TENT = { TypeName = "FARP Tent", ShapeName = "PalatkaB", Category = "Fortifications"},
-        WINDSOCK  = { TypeName = "Windsock", ShapeName = "H-Windsock_RW", Category = "Fortifications"}
+        FUEL = { TypeName = "FARP Fuel Depot", ShapeName = "GSM Rus", Category = "Fortifications", Position = nil},
+        AMMO = { TypeName = "FARP Ammo Dump Coating", ShapeName = "SetkaKP", Category = "Fortifications", Position = nil},
+        TENT = { TypeName = "FARP Tent", ShapeName = "PalatkaB", Category = "Fortifications", Position = nil},
+        WINDSOCK  = { TypeName = "Windsock", ShapeName = "H-Windsock_RW", Category = "Fortifications", Position = nil}
     }
-    
-    local posAmmo = farplocation:Translate(radius,farpStatic:GetHeading())
-    local posWindsock = farplocation:Translate(radius + 20,farpStatic:GetHeading())
-    local posFuel = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()+90)
-    local posTent = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()-90)
-    
-    local ammoObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.AMMO.TypeName,FARPSupportObjects.AMMO.Category,farpStatic:GetCountry())
-    --ammoObj:InitShape(_object.ShapeName)
-    ammoObj:InitHeading(farpStatic:GetHeading())
-    ammoObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farp:GetName().." AMMO")
-    
-    local fuelObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.FUEL.TypeName,FARPSupportObjects.FUEL.Category,farpStatic:GetCountry())
-    fuelObj:InitHeading(farpStatic:GetHeading())
-    fuelObj:SpawnFromCoordinate(posFuel,farpStatic:GetHeading(),farp:GetName().." FUEL")
-    
-    local tentObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.TENT.TypeName,FARPSupportObjects.TENT.Category,farpStatic:GetCountry())
-    tentObj:InitHeading(farpStatic:GetHeading())
-    tentObj:SpawnFromCoordinate(posTent,farpStatic:GetHeading(),farp:GetName().." TENT")
+    --calculate FARP support objects positions relative to FARP static
+    FARPSupportObjects.FUEL.Position = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()+90)
+    FARPSupportObjects.AMMO.Position = farplocation:Translate(radius,farpStatic:GetHeading())
+    FARPSupportObjects.TENT.Position = farplocation:Translate(radius,farpStatic:GetHeading()):Translate(spacing, farpStatic:GetHeading()-90)
+    FARPSupportObjects.WINDSOCK.Position = farplocation:Translate(radius + 20,farpStatic:GetHeading())
 
-    local windsockObj = SPAWNSTATIC:NewFromType(FARPSupportObjects.WINDSOCK.TypeName,FARPSupportObjects.WINDSOCK.Category,farpStatic:GetCountry())
-    windsockObj:InitHeading(farpStatic:GetHeading())
-    windsockObj:SpawnFromCoordinate(posWindsock,farpStatic:GetHeading(),farp:GetName().." WINDSOCK")
+    local farpName = farp:GetName()
+    for k,v in pairs(FARPSupportObjects) do
+        local current = STATIC:FindByName(farpName.." "..k, false)
+        --Object already exists
+        if (current) then            
+            if(current:GetCountry() ~= farpStatic:GetCountry()) then
+                --since country/coalition on static seem to be unmutable, we will respawn it to make sure it belongs to the correct coalition
+                current:ReSpawn(farpStatic:GetCountry(), 2)                
+            end
+            --Object does not exist, we have to spawn it
+        else
+            local spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,farpStatic:GetCountry())
+            --spawnObj:InitShape(_object.ShapeName)
+            spawnObj:InitHeading(farpStatic:GetHeading())
+            spawnObj:SpawnFromCoordinate(posAmmo,farpStatic:GetHeading(),farpName..k)            
+        end        
+    end
+end
 
-end    
 --Sets up airbase inventory, aircraft and weapon availability, this is required to limit airframe availability, note that it applies to AI CHIEF and human players
+--
 --Inventory is configured by modifying template warehouses RED_WAREHOUSE_TEMPLATE, RED_FARP_WAREHOUSE_TEMPLATE, BLUE_WAREHOUSE_TEMPLATE, BLUE_FARP_WAREHOUSE_TEMPLATE
 --NOTE: this should run before assigning units to chief  otherwise you might deny units to chief
---@param #AIRBASE airbase to set up
+---@param airbase AIRBASE Airbase to set up
 function HC:SetupAirbaseInventory(airbase)
     HC:T("------------------ Seting up inventory for "..airbase:GetName().." --------------------")
     local targetStorage = STORAGE:FindByName(airbase:GetName())
@@ -214,8 +217,8 @@ function HC:SetupAirbaseInventory(airbase)
 end
 
 --Garrisons units to be used by chief
---@param $WAREHOUSE - static warehouse used by chief
---@param AIRBASE - airbase to set up
+---@param warehouse STATIC static warehouse used by chief
+---@param airbase AIRBASE airbase to set up
 function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     --Generate units stationed at base and add them to chief 
     local side = string.upper(airbase:GetCoalitionName())
@@ -227,20 +230,20 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local airwingName = string.format("%s Air wing %s", side, airbase:GetName())
     for _, legion in pairs(chief.commander.legions) do
         if (legion:GetName() == brigadeName) then
-            env.warning("Removed legion "..legion:GetName())
+            HC:W("Removed legion "..legion:GetName())
             chief:RemoveLegion(legion)
             break
         end
     end
     for _, legion in pairs(chief.commander.legions) do
         if (legion:GetName() == airwingName) then
-            env.warning("Removed legion "..legion:GetName())
+            HC:W("Removed legion "..legion:GetName())
             chief:RemoveLegion(legion)
             break
         end
     end    
     -- Finda a safe spawn zone
-    local childZoneSet = HC:GetChildZonesSet(airbase.AirbaseZone, true)
+    local childZoneSet = HC:GetChildZoneSet(airbase.AirbaseZone, true)
     local randomZone = airbase.AirbaseZone
     if (childZoneSet:Count() == 0) then
         HC:W(string.format("[%s] Couldn't find child spawn zone for brigade...will spawn in random place...", airbase:GetName()))          
@@ -391,9 +394,9 @@ end
 
 --Spawns units to defend an airbase or FARP
 --Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
---@param ab AIRBASE
---@param hp Base numeric (0-100) which abstracts overall combat readiness, morale, supply state...
---@param isFrontline
+---@param ab AIRBASE target airbase
+---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
+---@param isFrontline boolean If true, base will be considered as fro
 function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     HC:T("Setting up base defense for "..ab:GetName())    
     local side = string.upper(ab:GetCoalitionName())
@@ -423,8 +426,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
 
     --Add a security detachment to base
     --find a random zone inside airbase zone and spawn base defense
-    --todo: track used zones to prevent spawning groups on top of each other
-    local childZonesSet = HC:GetChildZonesSet(ab.AirbaseZone, true)
+    local childZonesSet = HC:GetChildZoneSet(ab.AirbaseZone, true)
 
     for i=1, garrison.BASE do
         local randomZone = childZonesSet:GetRandomZone(10)
@@ -439,7 +441,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
                 grp:HandleEvent( EVENTS.UnitLost )
                 function grp:OnEventUnitLost(e)
-                    env.info("Group"..self:GetName().." lost a unit")            
+                    HC:T("Group"..self:GetName().." lost a unit")            
                 end
             end
         )
@@ -463,7 +465,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
                 grp:HandleEvent( EVENTS.UnitLost )
                 function grp:OnEventUnitLost(e)
-                    env.info("Group"..self:GetName().." lost a unit")            
+                    HC:T("Group"..self:GetName().." lost a unit")            
                 end
             end
         )
@@ -487,7 +489,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
                 grp:HandleEvent( EVENTS.UnitLost )
                 function grp:OnEventUnitLost(e)
-                    env.info("Group"..self:GetName().." lost a unit")            
+                    HC:T("Group"..self:GetName().." lost a unit")            
                 end
             end
         )
@@ -499,10 +501,26 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     end
 end
 
+--Resupply of all airbases and FARPs
+---@param resupplyPercent number - resupply amount in percent
+function HC:AirbaseResupply(resupplyPercent)
+    HC:T("Passive resupply triggered")
+    for _, abi in pairs(HC.ActiveAirbases) do
+        local ab = AIRBASE:FindByName(abi.Name)
+        abi.Coalition = ab:GetCoalition()
+        if(abi.HP + resupplyPercent <= 100) then
+            abi.HP = abi.HP + resupplyPercent
+        else
+            abi.HP = 100
+        end
+        abi:DrawLabel()
+    end        
+end  
+
 --Creates MOOSE CHIEF object
---@param #string side "RED" or "BLUE"
---@param #string alias Chief name (optional)
---@return #CHIEF MOOSE CHIEF object
+---@param side string "RED" or "BLUE"
+---@param alias string Chief name (optional)
+---@return CHIEF #MOOSE CHIEF object
 function HC:CreateChief(side, alias)
     local RADAR_MIN_HEIGHT = 20 --Minimum flight height to be detected, in meters AGL
     local RADAR_THRESH_HEIGHT = 80 --90% chance to not be detected if flying below RADAR_MIN_HEIGHT
@@ -569,8 +587,8 @@ end
 
 
 --Creates resources for chief assault on empty and occupied zone
---@param CHIEF chief
---@return resourcesEmpty table, resourcesOccupied table
+---@param chief CHIEF
+---@return resourcesEmpty table, resourcesOccupied table Resource tables for empty zone and occupied zone scenarios
 function HC:GetChiefZoneResponse(chief)
         local resourceOccupied, helos = chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
         --HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)

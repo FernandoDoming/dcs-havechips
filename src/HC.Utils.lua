@@ -1,27 +1,26 @@
-env.info("Loading HC.Utils")
 --Write trace message to log
---@param #string message Message text
+---@param message string message text
 function HC:T(message)
     env.info("[HaveChips] "..message)
 end
 
 --Write warning message to log
---@param #string message Message text
+---@param message string message text
 function HC:W(message)
     env.warning("[HaveChips] "..message)
 end
 
 --Write error message to log
---@param #string message Message text
+---@param message string message text
 function HC:E(message)
     env.error("[HaveChips] "..message)
 end
 
 --Returns a list of zones which are inside specified "parent" zone
 --Function is used to find pre-determined spawn locations around base perimeter
---@param ZONE Parent zone
---@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
---@return #table table of child zones
+---@param parent ZONE Parent zone
+---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
+---@return table #table of child zones
 function HC:GetChildZones(parent, onlyAvailableForSpawn)
     onlyAvailableForSpawn = onlyAvailableForSpawn or true
     local chilldZones = {}
@@ -44,10 +43,10 @@ end
 
 --Returns a SET_ZONE containing zones which are inside specified "parent" zone
 --Function is used to find pre-determined spawn locations around base perimeter
---@param ZONE Parent zone
---@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
---@return SET_ZONE of child zones
-function HC:GetChildZonesSet(parent, onlyAvailableForSpawn)
+---@param parent ZONE Parent zone
+---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
+---@return SET_ZONE #Set of child zones
+function HC:GetChildZoneSet(parent, onlyAvailableForSpawn)
     onlyAvailableForSpawn = onlyAvailableForSpawn or true
     local childZones = HC:GetChildZones(parent, onlyAvailableForSpawn)
     local zoneSet = SET_ZONE:New()
@@ -59,9 +58,9 @@ end
 
 --Gets a random child zone from specified parent
 --Function is used to find a pre-determined spawn location around base perimeter
---@param ZONE Parent zone
---@param bool onlyAvailableForSpawn if true, return only zones not marked as occupied
---@return A random child zone for specified parent
+---@param parent ZONE Parent zone
+---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
+---@return ZONE? #A random child zone for specified parent, nil if zone can't be found
 function HC:GetRandomChildZone(parent, onlyAvailableForSpawn)
     onlyAvailableForSpawn = onlyAvailableForSpawn or true
     local cz = HC:GetChildZones(parent, onlyAvailableForSpawn)
@@ -73,9 +72,9 @@ function HC:GetRandomChildZone(parent, onlyAvailableForSpawn)
 end    
 
 --Checks if an airbase is close to frontline
---@param airbase #AIRBASE Airbase to check
+---@param airbase AIRBASE Airbase to check
+---@return boolean #true if airbase is close to the frontline
 function HC:IsFrontlineAirbase(airbase)
-    local FRONTLINE_DISTANCE = 50000 --distance in meters, if an enemy airbase or farp is at or closer than FRONTLINE_DISTANCE, airbase is considered a frontline airbase
     local coord = airbase:GetCoordinate()
     local enemySide = nil
     if (airbase:GetCoalition() == coalition.side.NEUTRAL) then
@@ -94,12 +93,12 @@ function HC:IsFrontlineAirbase(airbase)
     -- )
     local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
     local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
-    return dist <= 50000
+    return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000)
 end
 
 --Checks if file specified by filename path exists
---@param filename Filename path
---@return #bool true if file exists
+---@param filename string path to check
+---@return boolean #true if file exists, false otherwise
 function HC:FileExists(filename)
     --Check io
     if not io then
@@ -116,8 +115,8 @@ function HC:FileExists(filename)
 end
 
 --load saved data from file
---@param filename - filename path to load from
----@return bool success (true if operation was successful, false otherwise), table - json file data as Lua table
+---@param filename string filename path to load from
+---@return boolean, table? #true if operation was successful, false otherwise, dataTable - json data as Lua table
 function HC:LoadTable(filename)
     --Check io
     if not io then
@@ -137,14 +136,15 @@ function HC:LoadTable(filename)
     end        
     local content = f:read("*all")
     f:close()
-    --local tbl = assert(JSON.decode(content), "Couldn't decode JSON data from file "..filename)
     local tbl = NET.Json2Lua(content)
     UTILS.TableShow(tbl)
     return true, tbl
 end
 
 --save lua table to JSON file
---@return bool true if operation was successful, false otherwise
+---@param table table Lua table to save
+---@param filename string File path to save the data to
+---@return return boolean true if operation was successful, false otherwise
 function HC:SaveTable(table, filename)
     --Check io
     if not io then
@@ -160,7 +160,7 @@ function HC:SaveTable(table, filename)
         HC:E("Table is nil")
         return false
     end        
-    --local json = assert(JSON.encode(table),"Couldn't encode Lua table")
+
     local json = NET.Lua2Json(table)
     local f = assert(io.open(filename, "wb"))
     if (f == nil) then
@@ -169,5 +169,5 @@ function HC:SaveTable(table, filename)
     end        
     f:write(json)
     f:close()
+    return true
 end
-env.info("HC.Utils loaded")

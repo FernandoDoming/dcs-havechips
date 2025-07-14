@@ -1,21 +1,21 @@
 env.info("Loading HC.AIRBASEINFO")
---This class is primarily used to persist airbase state between server restarts
+--This class is primarily used to persist airbase state between server restarts and track some extras required for scenario in runtime (markers etc.)
 AIRBASEINFO = {
-    WPIndex = 99,
+    WPIndex = 99, --Waypoint index
     Name = nil, --Airbase name
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL, --Current coalition
     MarkId = nil --Label MarkId on F10 Map
 }
 
---Gets Lua table that will be peristed
+--Gets Data table to be persisted on mission restarts
+---@return table #Data table to be persisted on mission restarts
 function AIRBASEINFO:GetTable()
     return {
         WPIndex = self.WPIndex,
         Name = self.Name,
         HP = self.HP,
-        Coalition = self.Coalition,
-        MarkId = self.MarkId
+        Coalition = self.Coalition
     }
 end
 
@@ -100,8 +100,10 @@ function AIRBASEINFO:DrawLabel()
     self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1d %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
---@param #AIRBASE airbase - MOOSE AIRBASE object
---@param #number hp - airbase state 0-100 with 100 being 100% operational
+---Constructor, creates AIRBASE info from AIRBASE object
+---@param airbase AIRBASE MOOSE AIRBASE object
+---@param hp number Airbase overall operational state 0-100 with 100 being 100% operational
+---@return AIRBASEINFO
 function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     local o = {}
     WPIndex = 99
@@ -114,20 +116,23 @@ function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     return o
 end
 
+---Constructor, creates AIRBASE info from Lua table object
+---@param table table #Data table to load from
+---@return AIRBASEINFO
 function AIRBASEINFO:NewFromTable(table)
     local o = {}
     o.WPIndex = table.WPIndex or 99
     o.Name = table.Name
     o.HP = table.HP
     o.Coalition = table.Coalition
-    o.MarkId = table.MarkId
+    o.MarkId = nil
     setmetatable(o, self)
     self.__index = self
     return o
 end    
 
 --Check if base is close to frontline
---@return #bool true if base is close to front line
+---@return boolean #true if base is close to front line
 function AIRBASEINFO:IsFrontline()
     local airbase = AIRBASE:FindByName(self.Name)
     return HC:IsFrontlineAirbase(airbase)
