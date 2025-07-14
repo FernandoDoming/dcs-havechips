@@ -103,10 +103,9 @@ end
 --@param #number resupplyPercent resupply amount in percent
 function HC:AirbaseResupply(resupplyPercent)
     HC:T("Passive resupply triggered")
-    for i=1, #(HC.ActiveAirbases) do
-        local abi = HC.ActiveAirbases[i]
+    for _, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(abi.Name)
-        local opsZone = OPSZONE:FindByName(abi.Name)
+        --local opsZone = OPSZONE:FindByName(abi.Name)
         --HC:T(string.format("%s airbase: %s opszone: %s", abi.Name, ab:GetCoalitionName(), opsZone:GetOwnerName()))
         abi.Coalition = ab:GetCoalition()
         if(abi.HP + resupplyPercent <= 100) then
