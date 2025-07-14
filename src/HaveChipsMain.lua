@@ -26,7 +26,8 @@ HC = {
     LONG_TICK_TIMER = nil, -- reference to timer
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
     LONG_TICK_INTERVAL = 120, --long tick timer interval in seconds 
-    OccupiedSpawnZones = {} --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
+    OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
+    EventHandler = {}
 
 }
 
@@ -45,9 +46,9 @@ function HC:Start()
     HC.ActiveAirbases = {}
     local filename = HC.PERSIST_FILE_NAME
     local wpGroup = GROUP:FindByName("WP_TEMPLATE")
+
     ----------------------------------------------------------------------------------------------------------
-    --                              Initialize campaign state or load progress
-    ----------------------------------------------------------------------------------------------------------
+    --#region Initialize campaign state or load progress
     if(not HC:FileExists(HC.BASE_PATH..filename)) then
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
@@ -78,9 +79,7 @@ function HC:Start()
         --save to file
         HC:SaveTable(HC.ActiveAirbases, HC.BASE_PATH..filename)
     else
-        ----------------------------------------------------------------------------------------------------------------
-        --                                Campaign is in progress, we need to load the data
-        ----------------------------------------------------------------------------------------------------------------
+        -- Campaign is in progress, we need to load the data
         wpGroup:Destroy() --we don't need the waypoints template group it anyway, we loaded waypoints from JSON file
         HC:T("Loading campaign progress")
         local success = false
@@ -96,9 +95,9 @@ function HC:Start()
             HC:W("Could not load table from file "..basePath..filename)
         end
     end
+    --#endregion
     ----------------------------------------------------------------------------------------------------------
-    --                                      Campaign state loaded
-    ----------------------------------------------------------------------------------------------------------
+
     --Now we have a table of active airbases and we can bring them to life
     --set their coalition and state of combat effectivenes
     for _, abi in pairs(HC.ActiveAirbases) do
@@ -107,9 +106,15 @@ function HC:Start()
         local abZone = ZONE_AIRBASE:New(ab:GetName())
         local opsZone = OPSZONE:New(abZone)   
         opsZone:SetMarkZone(true)
-        opsZone:SetDrawZone(true)   
+        opsZone:SetDrawZone(true)
         function opsZone:OnAfterEmpty(From, Event, To)
-            HC.OnZoneEmpty(HC, From, Event, To, self)
+            HC.OnAfterEmpty(HC, From, Event, To, self)
+        end
+        function opsZone:OnAfterCaptured(From, Event, To)
+            HC.OnAfterCaptured(HC, From, Event, To, self)
+        end
+        function opsZone:OnAfterAttacked(From, Event, To, AttackerCoalition)
+            HC.OnAfterAttacked(HC, From, Event, To, AttackerCoalition, self)
         end
         local isFrontline = HC:IsFrontlineAirbase(ab)
         local isFARP = ab:GetCategory() == Airbase.Category.HELIPAD
@@ -117,7 +122,7 @@ function HC:Start()
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
             HC:SetupAirbaseInventory(ab)
             --opsZone:SetDrawZone(false)
-            -- This is a static object required by MOOSE CHIEF, can be any static )yes, even a cow!)
+            -- This is a static object required by MOOSE CHIEF, can be any static (yes, even a cow!)
             local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)
             --add AI units to base to be used by CHIEF
             HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
@@ -142,97 +147,29 @@ function HC:Start()
     HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
     HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
     HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
-    -- Event handlers
-    HC.onKillHandler = EVENTHANDLER:New()
-    HC.onKillHandler:HandleEvent( EVENTS.Kill )
-    function HC.onKillHandler:OnEventKill(e )
-        HC:OnUnitKilled(e)
-    end
+    --#region ---------- Event handlers -------------
+    
+    HC.EventHandler = EVENTHANDLER:New()
+    HC.EventHandler:HandleEvent(EVENTS.Kill, HC.OnEventKill)
+    HC.EventHandler:HandleEvent(EVENTS.BaseCaptured, HC.OnEventBaseCaptured)
+    HC.EventHandler:HandleEvent(EVENTS.Dead, HC.OnEventDead)
+    HC.EventHandler:HandleEvent(EVENTS.MissionEnd, HC.OnEventMissionEnd)
+    HC.EventHandler:HandleEvent(EVENTS.PilotDead, HC.OnEventPilotDead)
+    HC.EventHandler:HandleEvent(EVENTS.Shot, HC.OnEventShot)
+    HC.EventHandler:HandleEvent(EVENTS.UnitLost, HC.OnEventUnitLost)
+    HC.EventHandler:HandleEvent(EVENTS.BDA, HC.OnEventBDA)
+    HC.EventHandler:HandleEvent(EVENTS.Takeoff, HC.OnEventTakeoff)
+    HC.EventHandler:HandleEvent(EVENTS.LandingAfterEjection, HC.OnEventLandingAfterEjection)
+    HC.EventHandler:HandleEvent(EVENTS.Ejection, HC.OnEventEjection)
+    HC.EventHandler:HandleEvent(EVENTS.Land, HC.OnEventLand)
+    --#endregion
     HC.BLUE.CHIEF:__Start(1)
     HC:T("Startup completed")
 end
 
 
 
-function HC:OnZoneEmpty(From, Event, To, opsZone)
-    HC:W("*************** ZONE ".."".." IS EMPTY ******************")
-    --destroy all statics and set zone to neutral? Maybe?
-    --local previousCoalitionName = string.upper(opsZone:GetCoalitionName())
-    --opsZone:Captured(coalition.side.NEUTRAL)
-    --AIRBASE:FindByName(opsZone:GetName()):SetCoalition(coalition.side.NEUTRAL)
-end
 
-function HC:OnUnitKilled(e)
---   Unit.Category
---   AIRPLANE      = 0,
---   HELICOPTER    = 1,
---   GROUND_UNIT   = 2,
---   SHIP          = 3,
---   STRUCTURE     = 4
-
---Object.Category
---  UNIT    1
---  WEAPON  2
---  STATIC  3
---  BASE    4
---  SCENERY 5
---  Cargo   6
-
-    if (e and e.IniCategory and e.IniCoalition and e.IniTypeName and e.IniObjectCategory
-            and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
-            and e.WeaponName) then
-        local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniTypeName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtTypeName, e.WeaponName)
-        HC:W(BDA)
-        MESSAGE:New(BDA, 10):ToAll()
-
-        --if unit is ground unit - damage airbase where it was destroyed
-        --if unit is air unit - damage airbase from which it came from
-        if(e.TgtObjectCategory == Object.Category.UNIT or e.TgtObjectCategory == Object.Category.STATIC) then
-            --Find which airbase and apply damage
-            if (e.TgtDCSUnit) then
-                local position = e.TgtDCSUnit:getPosition() --x,y,z
-                local tgtCoalitionName = UTILS.GetCoalitionName(e.TgtCoalition)
-                local friendlyBases = SET_AIRBASE:New():FilterCoalitions(string.lower(tgtCoalitionName)):FilterOnce()
-                friendlyBases:ForEachAirbase(
-                    function(b)
-                        HC:T("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
-                    end
-                )
-                local coord = COORDINATE:NewFromVec3(position.p)
-                local b, dist = coord:GetClosestAirbase()
-                if (dist <= 2500 and b:GetCoalition() == e.TgtCoalition) then
-                    --Unit killed within friendly airbase/FARP range
-                    HC:T(string.format("Unit killed %d from %s, should apply damage to airbase", dist, b:GetName()))
-                    local abi = HC.ActiveAirbases[b:GetName()]
-                    if (abi) then
-                        --placeholder, damage will be calculated based on unit type
-                        abi.HP = abi.HP -5
-                    end
-                end
-            end
-        end
-    end
-end  
-
-function HC:EndMission()
-    --ToDo: save state
-    
-end
-
-function HC:OnShortTick()
-    for i=1, #(HC.ActiveAirbases) do
-        local abi = HC.ActiveAirbases[i]
-        local ab = AIRBASE:FindByName(abi.Name)
-        abi.Coalition = ab:GetCoalition()
-        abi:DrawLabel()
-    end
-end
-
-function HC:OnLongTick()
-    --This will go in long tick!
-    local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
-    HC:AirbaseResupply(resupplyPercent) 
-end
 
 --Saves scenario state to file
 function HC:SaveCampaignState()

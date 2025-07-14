@@ -15,5 +15,7 @@ echo ------------------- HC.AirbaseInfo.lua ------------------- >> %OUTFILE%
 type .\src\HC.AirbaseInfo.lua >> %OUTFILE%
 echo ------------------- HC.Builders.lua ------------------- >> %OUTFILE%
 type .\src\HC.Builders.lua >> %OUTFILE%
+echo ------------------- HC.EventHandlers.lua ------------------- >> %OUTFILE%
+type .\src\HC.EventHandlers.lua >> %OUTFILE%
 echo ------------------- HC.Utils.lua ------------------- >> %OUTFILE%
 type .\src\HC.Utils.lua >> %OUTFILE%
