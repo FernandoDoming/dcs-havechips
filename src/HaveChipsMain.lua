@@ -59,6 +59,9 @@ function HC:OnUnitKilled(e)
         local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniTypeName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtTypeName, e.WeaponName)
         env.warning(BDA)
         MESSAGE:New(BDA, 10):ToAll()
+
+        --if unit is ground unit - damage airbase where it was destroyed
+        --if unit is air unit - damage airbase from which it came from
         if(e.TgtObjectCategory == Object.Category.UNIT or e.TgtObjectCategory == Object.Category.STATIC) then
             --Find which airbase and apply damage
             if (e.TgtDCSUnit) then
@@ -74,7 +77,12 @@ function HC:OnUnitKilled(e)
                 local b, dist = coord:GetClosestAirbase()
                 if (dist <= 2500 and b:GetCoalition() == e.TgtCoalition) then
                     --Unit killed within friendly airbase/FARP range
-                    env.info(string.format("Unit killed $d from %s", dist, b:GetName()))
+                    env.info(string.format("Unit killed %d from %s, should apply damage to airbase", dist, b:GetName()))
+                    local abi = HC.ActiveAirbases[b:GetName()]
+                    if (abi) then
+                        --placeholder, damage will be calculated based on unit type
+                        abi.HP = abi.HP -5
+                    end
                 end
             end
         end
@@ -183,7 +191,8 @@ function HC:Start()
         if(success) then
             HC:T("Table loaded from file "..basePath..filename)
             for i=1, #data do
-                table.insert(HC.ActiveAirbases, AIRBASEINFO:NewFromTable(data[i]))
+                --table.insert(HC.ActiveAirbases,AIRBASEINFO:NewFromTable(data[i]))
+                HC.ActiveAirbases[data[i].Name] = AIRBASEINFO:NewFromTable(data[i])
             end
         else
             HC:W("Could not load table from file "..basePath..filename)
@@ -194,8 +203,7 @@ function HC:Start()
     ----------------------------------------------------------------------------------------------------------
     --Now we have a table of active airbases, we can now populate those airbases
     --set their coalition and state of combat effectivenes
-    for i=1, #(HC.ActiveAirbases) do
-        local abi = HC.ActiveAirbases[i]
+    for _, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(abi.Name)
         ab:SetCoalition(abi.Coalition)        
         local abZone = ZONE_AIRBASE:New(ab:GetName())
