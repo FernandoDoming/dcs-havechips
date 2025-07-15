@@ -23,7 +23,7 @@ function HC:GetTemplateGroupNames(side, missionType)
     local allGroups = SET_GROUP:New():FilterCoalitions(string.lower(side), false):FilterActive(false):FilterOnce()
     allGroups:ForEachGroup(
         function(g)
-            HC:T(string.format("%s template checking %s ", g:GetName(), templateZone:GetName()))
+            --HC:T(string.format("%s template checking %s ", g:GetName(), templateZone:GetName()))
             --Get first unit in group, if in specified zone then add to templates, not perfect but it works
             if (templateZone:IsVec3InZone(g:GetUnits()[1]:GetVec3())) then
                 HC:T(g.GroupName.." added to " ..side.." templates ".. missionType)
@@ -181,20 +181,20 @@ end
 --NOTE: this should run before assigning units to chief  otherwise you might deny units to chief
 ---@param airbase AIRBASE Airbase to set up
 function HC:SetupAirbaseInventory(airbase)
-    HC:T("------------------ Seting up inventory for "..airbase:GetName().." --------------------")
+    --HC:T("------------------ Seting up inventory for "..airbase:GetName().." --------------------")
     local targetStorage = STORAGE:FindByName(airbase:GetName())
     local sourceStorage = nil
     local SIDE = string.upper(airbase:GetCoalitionName())
-    if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
+    if(airbase:GetCategory() == Airbase.Category.HELIPAD and #(airbase.runways) == 0) then
         sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FARP
-    elseif (airbase:GetCategory() == Airbase.Category.AIRDROME) then
+    elseif (airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways) > 0) then
         if(HC:IsFrontlineAirbase(airbase)) then
             sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.FRONTLINE
         else
             sourceStorage = HC[SIDE].INVENTORY_TEMPLATES.MAIN
         end            
     else
-        HC:W("Unknown airbase category ")
+        HC:W("Unknown airbase category, can't set up inventory ")
         return
     end
     local sourceAircraft, _, sourceWeapons = sourceStorage:GetInventory()
@@ -212,14 +212,13 @@ function HC:SetupAirbaseInventory(airbase)
         end
         --Fill storage from source storage template
         for name,v in pairs(sourceAircraft) do
-            HC:W(string.format("%s %d", name, v))
             targetStorage:SetItem(name, v)
         end
         for name,v in pairs(sourceWeapons) do
             targetStorage:SetItem(name, v)
         end        
     end
-    HC:T("------------------ END Seting up inventory for "..airbase:GetName().." --------------------")
+    --HC:T("------------------ END Seting up inventory for "..airbase:GetName().." --------------------")
 end
 
 --Garrisons units to be used by chief
@@ -404,7 +403,8 @@ end
 ---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
 ---@param isFrontline boolean? If true, base will be considered as fro
 function HC:SetupAirbaseDefense(ab, hp, isFrontline)
-    HC:T("Setting up base defense for "..ab:GetName())    
+    HC:T("Setting up base defense for "..ab:GetName())      
+
     local side = string.upper(ab:GetCoalitionName())
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
@@ -417,7 +417,8 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     local garrison = {
         BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
         SHORAD = 0, -- short range air defense groups from <SIDE>_SHORAD_TEMPLATES
-        SAM = 0 -- SAM batteries from <SIDE>_SAM_TEMPLATES
+        SAM = 0, -- SAM batteries from <SIDE>_SAM_TEMPLATES
+        EWR = 0 --Early warning radars
     }
 
     if (hp <= 20) then
@@ -431,13 +432,15 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     elseif (hp > 80 and hp <= 90) then
         garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 3, EWR = 1 }
-
+        garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
     end
 
+    HC:T(string.format("Garrison for %s BASE: %d SHORAD: %d SAM: %d EWR: %d", ab:GetName(), garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR))
     --Add a security detachment to base
     --find a random zone inside airbase zone and spawn base defense
     local childZonesSet = HC:GetChildZoneSet(ab.AirbaseZone, true)
+
+    
 
     for i=1, garrison.BASE do
         local randomZone = childZonesSet:GetRandomZone(10)
@@ -512,6 +515,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     end
 
     for i=1, garrison.EWR do
+        HC:T(string.format("[%s] Looking for spaen zone for EWR %d zones in set", ab:GetName(), childZonesSet:Count()))
         local randomZone = childZonesSet:GetRandomZone(10)
         if (not randomZone) then
             HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", ab:GetName()))
