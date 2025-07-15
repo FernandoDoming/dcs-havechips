@@ -1,6 +1,8 @@
 @echo off
-set OUTFILE=".\dist\havechips.lua"
+set OUTFILE=".\dist\Missions\havechips\havechips.lua"
 del %OUTFILE%
+del .\dist\Missions\havechips\*.lua
+del .\dist\Missions\havechips\*.json
 echo ------------------- MOOSE.lua ------------------- >> %OUTFILE%
 type ..\..\Scripts\MOOSE_INCLUDE\Moose_Include_Static\Moose_.lua >> %OUTFILE%
 echo ------------------- SPLASH DAMAGE ------------------- >> %OUTFILE%
@@ -19,3 +21,4 @@ echo ------------------- HC.EventHandlers.lua ------------------- >> %OUTFILE%
 type .\src\HC.EventHandlers.lua >> %OUTFILE%
 echo ------------------- HC.Utils.lua ------------------- >> %OUTFILE%
 type .\src\HC.Utils.lua >> %OUTFILE%
+copy .\airbases.json .\dist\Missions\havechips\

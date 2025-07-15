@@ -1,5 +1,5 @@
 HC = {
-    VERSION=0.1,
+    VERSION="0.1.1",
     RED = { 
         TEMPLATES = {},
         INVENTORY_TEMPLATES = {
@@ -36,6 +36,7 @@ env.info(string.format("HaveChips %s loading ", HC.VERSION))
 --Loads current campaign state and starts ResumeCampaign() when data is ready
 --This is the main entry point to HC
 function HC:Start()
+    HC:T("Starting HaveChips "..HC.VERSION)
     --Initialize group templates, we will need them later
     HC:InitGroupTemplates()
     --Create MOOSE CHIEFS, we will need them later
