@@ -113,12 +113,34 @@ end
 ---@param e EVENTDATA Event data
 function HC:OnEventLandingAfterEjection(e)
     HC:W("HC.EVENT OnEventLandingAfterEjection")
+    if (not e.IniPlayerName) then
+        --that is an AI 
+        if (e.IniDCSUnit) then
+            e.IniDCSUnit:destroy()
+        end
+    end
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventLand(e)
     HC:W("HC.EVENT OnEventLand")
 end
+
+---@param e EVENTDATA Event data
+function HC:OnEventDiscardChairAfterEjection(e)
+    HC:W("HC.EVENT OnEventDiscardChairAfterEjection")
+    if (not e.IniPlayerName) then
+        --that is an AI 
+        if (e.target) then
+            e.target:destroy()
+        end
+        if(e.IniDCSUnit) then
+            Unit.destroy(e.IniDCSUnit)
+        end
+    end
+end
+
+
 --#endregion
 
 --#region ---------------- OpsZone FSM events --------------
