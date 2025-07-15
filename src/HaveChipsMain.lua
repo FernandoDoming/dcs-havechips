@@ -20,7 +20,7 @@ HC = {
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
     PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour,
     FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
-    TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM"},
+    TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"},
     ActiveAirbases = {},
     SHORT_TICK_TIMER = nil, --reference to timer
     LONG_TICK_TIMER = nil, -- reference to timer
@@ -122,7 +122,7 @@ function HC:Start()
         --setup base available airframes and weapons based on templates
         if(ab:GetCoalition() ~= coalition.side.NEUTRAL) then
             HC:SetupAirbaseInventory(ab)
-            --opsZone:SetDrawZone(false)
+            opsZone:SetDrawZone(false)
             -- This is a static object required by MOOSE CHIEF, can be any static (yes, even a cow!)
             local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)
             --add AI units to base to be used by CHIEF
@@ -165,6 +165,7 @@ function HC:Start()
     HC.EventHandler:HandleEvent(EVENTS.Kill, HC.OnEventKill)
     --#endregion
     HC.BLUE.CHIEF:__Start(1)
+    HC.RED.CHIEF:__Start(1)
     HC:T("Startup completed")
 end
 

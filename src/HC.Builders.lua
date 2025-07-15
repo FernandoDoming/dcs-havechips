@@ -118,7 +118,7 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
         warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
     end
 
-    if(airbase:GetCategory() == Airbase.Category.HELIPAD) then
+    if(airbase:GetCategory() == Airbase.Category.HELIPAD and #(airbase.runways)==0) then
         HC:SetupFARPSupportUnits(airbase)
     end
 
@@ -260,7 +260,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     --Ground units
     local brigade=BRIGADE:New(warehouse:GetName(), brigadeName)
     for i=1, #(templates.LIGHT_INFANTRY) do
-        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 4, string.format("%s Infantry %d %s", side, i, airbase:GetName()))
+        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, string.format("%s Infantry %d %s", side, i, airbase:GetName()))
         platoon:SetGrouping(4)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.ONGURAD}, 70)
         -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
@@ -337,7 +337,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
-    if(airbase:GetCategory() == Airbase.Category.AIRDROME) then
+    if(airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways)>0) then
         for i=1, #(templates.CAP) do
                 local templateGroupName = templates.CAP[i]
                 local squadron=SQUADRON:New(templates.CAP[i], 2, string.format("%s Fighter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
@@ -421,17 +421,17 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     }
 
     if (hp <= 20) then
-        garrison = { BASE = 1, SHORAD = 0, SAM = 0 }
+        garrison = { BASE = 1, SHORAD = 0, SAM = 0, EWR = 0 }
     elseif (hp > 20 and hp <= 40) then
-        garrison = { BASE = 1, SHORAD = 1, SAM = 0 }
+        garrison = { BASE = 1, SHORAD = 1, SAM = 0, EWR = 0 }
     elseif (hp > 40 and hp <= 60) then        
-        garrison = { BASE = 1, SHORAD = 2, SAM = 0 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
     elseif (hp > 60 and hp <= 80) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
     elseif (hp > 80 and hp <= 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 3}
+        garrison = { BASE = 1, SHORAD = 3, SAM = 3, EWR = 1 }
 
     end
 
@@ -510,6 +510,30 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
     end
+
+    for i=1, garrison.EWR do
+        local randomZone = childZonesSet:GetRandomZone(10)
+        if (not randomZone) then
+            HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", ab:GetName()))
+            break
+        end
+        local unitAlias = string.format("EWR RED %s %d", ab:GetName(), i)
+        local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
+        :OnSpawnGroup(
+            function(grp)
+                HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
+                grp:HandleEvent( EVENTS.UnitLost )
+                function grp:OnEventUnitLost(e)
+                    HC:T("Group"..self:GetName().." lost a unit")            
+                end
+            end
+        )
+        :InitRandomizeTemplate(templates.EWR)
+        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+        childZonesSet:RemoveZonesByName(randomZone:GetName())
+        HC.OccupiedSpawnZones[randomZone:GetName()] = true
+        chief:AddAgent(group)
+    end    
 end
 
 --Resupply of all airbases and FARPs
@@ -540,7 +564,7 @@ function HC:CreateChief(side, alias)
     --https://flightcontrol-master.github.io/MOOSE_DOCS_DEVELOP/Documentation/Ops.Chief.html##(CHIEF).SetRadarBlur
     --chief:SetRadarBlur(RADAR_MIN_HEIGHT, RADAR_THRESH_HEIGHT, RADAR_THRESH_BLUR, RADAR_CLOSING_IN)
     --Add default intel agents and create chief
-    local agents = SET_GROUP:New():FilterPrefixes(string.upper(side).." EWR"):FilterPrefixes(string.upper(side).." AWACS"):FilterOnce()
+    local agents = SET_GROUP:New():FilterPrefixes("EWR "..string.upper(side)):FilterPrefixes("AWACS "..string.upper(side)):FilterOnce()
     alias = alias or "CHIEF "..string.upper(side)
     local chief = CHIEF:New(string.lower(side), agents, alias)
 
