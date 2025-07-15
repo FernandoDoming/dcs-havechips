@@ -308,7 +308,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     
     for i=1, #(templates.TRANSPORT_HELI) do
             local templateGroupName = templates.TRANSPORT_HELI[i]
-            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 5, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 4, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
             squadron:SetGrouping(1) -- 1 aircraft per group.
             squadron:SetModex(10)  -- Tail number of the sqaud start with 60
@@ -517,7 +517,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", ab:GetName()))
             break
         end
-        local unitAlias = string.format("EWR RED %s %d", ab:GetName(), i)
+        local unitAlias = string.format("EWR %s %s %d", side, ab:GetName(), i)
         local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
