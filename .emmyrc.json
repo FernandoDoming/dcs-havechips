@@ -8,7 +8,7 @@
   "workspace": {
     "enableReindex": false,
     "encoding": "utf-8",
-    "ignoreDir": ["Moose","C:/Users/tgudelj/Saved Games/DCS/Missions/MOOSE_MISSIONS","C:/Users/tgudelj/Saved Games/DCS.openbeta/Missions/MOOSE_MISSIONS"],
+    "ignoreDir": [],
     "ignoreGlobs": [],
     "library": ["C:\\Users\\tgudelj\\Saved Games\\DCS.openbeta\\Scripts\\MOOSE\\Moose Development\\Moose"],
     "moduleMap": [],
