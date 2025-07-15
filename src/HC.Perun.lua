@@ -5,7 +5,7 @@ PERUN = {
     CurrentSuffix = 1
 }
 env.info(string.format("PERUN %s loading ", PERUN.VERSION))
-function PERUN:CleanZone(zoneName, coalitionName)
+function PERUN:NukeZone(zoneName, coalitionName)
         local z = ZONE:FindByName(zoneName)
         if (not z) then
             env.info("Zone not found "..zoneName)
@@ -46,10 +46,62 @@ function PERUN:CleanZone(zoneName, coalitionName)
         PERUN:SearchZone(z, destroyObject, {Object.Category.UNIT, Object.Category.STATIC, Object.Category.CARGO})
 end
 
+
+function PERUN:DestroyUnitsInZone(zoneName, coalitionName)
+        local z = ZONE:FindByName(zoneName)
+        if (not z) then
+            env.info("Zone not found "..zoneName)
+            return
+        end
+        coalitionName = coalitionName or "ALL"
+        coalitionName = string.upper(coalitionName)
+
+        if (coalitionName ~= "ALL" 
+            and coalitionName ~= "NEUTRAL"
+            and coalitionName ~= "RED"
+            and coalitionName ~= "BLUE"
+            ) then
+                env.info(string.format("Invalid coalition [%s]",coalitionName))
+            return
+        end
+        env.info(string.format("Killing objects belonging to [%s] in [%s]",coalitionName, zoneName))
+        local function destroyObject(obj)
+            local objCategory = obj:getCategory()            
+            env.info("PERUN: killing "..obj:getName())
+            if (coalitionName ~= "ALL") then
+                local coalitionId = coalition.side[coalitionName]               
+                if (objCategory == Object.Category.UNIT 
+                    or objCategory == Object.Category.STATIC 
+                    or objCategory == Object.Category.CARGO 
+                ) then
+                    if(obj:getCoalition() == coalitionId) then
+                        env.info("PERUN: killing ["..coalitionName.."] "..obj:getName())
+                        obj:destroy()   
+                    end
+                end                  
+            else
+                env.info("PERUN: killing "..obj:getName())
+                obj:destroy()
+            end                
+            return true
+        end
+        PERUN:SearchZone(z, destroyObject, {Object.Category.UNIT})
+end
+
+function PERUN:DestroyStatic(staticName)
+    local static = STATIC:FindByName(staticName, false)
+    if(not static) then
+        env.info("Static "..staticName.." not found")
+        return
+    end
+    static:Destroy()
+end
+
 function PERUN:DestroyUnit(unitName)
     local unit = UNIT:FindByName(unitName)
     if (not unit) then
         env.info("Unit "..unitName.." not found")
+        return
     end
     unit:Destroy()
 end    
@@ -58,10 +110,10 @@ function PERUN:DestroyGroup(groupName)
     local group = GROUP:FindByName(groupName)
     if (not group) then
         env.info("Unit "..groupName.." not found")
+        return
     end
     group:Destroy(false)
 end  
-
 
 function PERUN:SpawnInZone(zoneName, coalitionName)
     local z = ZONE:FindByName(zoneName)
