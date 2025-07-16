@@ -27,8 +27,18 @@ HC = {
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
     LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds 
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
-    EventHandler = {}
-
+    EventHandler = {},
+    AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST = {
+        DEFAULT = 0.5,
+        AAA = 1,
+        EWR = 5,
+        SAM = 2,
+        TANK = 1.5,
+        AIRCRAFT = 5,
+        HELICOPTER = 3,
+        STATIC = 2,
+        PLAYER = 8
+    } --percentage damage for unit type destroyed
 }
 
 env.info(string.format("HaveChips %s loading ", HC.VERSION))

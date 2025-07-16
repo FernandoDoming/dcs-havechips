@@ -171,3 +171,195 @@ function HC:SaveTable(table, filename)
     f:close()
     return true
 end
+
+--#region DCS attributes enum
+
+ --["plane_carrier"] = {},
+ --["no_tail_trail"] = {},
+ --["cord"] = {},
+ --["ski_jump"] = {},
+ --["catapult"] = {},
+ --["low_reflection_vessel"] = {},
+ --["AA_flak"] = {},
+ --["AA_missile"] = {},
+ --["Cruise missiles"] = { "Missiles", },
+ --["Anti-Ship missiles"] = { "Missiles", },
+ --["Missiles"] = { "Planes", },
+ --["Fighters"] = { "Planes", "Battle airplanes", },
+ --["Interceptors"] = { "Planes", "Battle airplanes", },
+ --["Multirole fighters"] = { "Planes", "Battle airplanes", },
+ --["Bombers"] = { "Planes", "Battle airplanes", },
+ --["Battleplanes"] = { "Planes", "Battle airplanes", },
+ --["AWACS"] = { "Planes", },
+ --["Tankers"] = { "Planes", },
+ --["Aux"] = { "Planes", },
+ --["Transports"] = { "Planes", },
+ --["Strategic bombers"] = { "Bombers", },
+ --["UAVs"] = { "Planes", },
+ --["Attack helicopters"] = {"Helicopters", },
+ --["Transport helicopters"]   = {"Helicopters", },
+ --["Planes"] = {"Air",},
+ --["Helicopters"] = {"Air",},
+ --["Cars"] = {"Unarmed vehicles",},
+ --["Trucks"] = {"Unarmed vehicles",},
+ --["Infantry"] = {"Armed ground units", "NonArmoredUnits"},
+ --["Tanks"] = {"Armored vehicles","Armed vehicles","AntiAir Armed Vehicles","HeavyArmoredUnits",},
+ --["Artillery"] = {"Armed vehicles","Indirect fire","LightArmoredUnits",},
+ --["MLRS"] = {"Artillery",},
+ --["IFV"] = {"Infantry carriers","Armored vehicles","Armed vehicles","AntiAir Armed Vehicles","LightArmoredUnits",},
+ --["APC"] = {"Infantry carriers","Armored vehicles","Armed vehicles","AntiAir Armed Vehicles","LightArmoredUnits",},
+ --["Fortifications"] = {"Armed ground units","AntiAir Armed Vehicles","HeavyArmoredUnits",},
+ --["Armed vehicles"] = {"Armed ground units","Ground vehicles",},
+ --["Static AAA"] = {"AAA", "Ground vehicles",},
+ --["Mobile AAA"] = {"AAA", "Ground vehicles",},
+ --["SAM SR"] = {"SAM elements",}, -- Search Radar
+ --["SAM TR"] = {"SAM elements"}, -- Track Radar
+ --["SAM LL"] = {"SAM elements","Armed Air Defence"},  -- Launcher
+ --["SAM CC"] = {"SAM elements",}, -- Command Center
+ --["SAM AUX"] = {"SAM elements",}, -- Auxilary Elements (not included in dependencies)
+ --["SR SAM"] = {}, -- short range
+ --["MR SAM"] = {}, -- medium range
+ --["LR SAM"] = {}, -- long range
+ --["SAM elements"] = {"Ground vehicles", "SAM related"}, --elements of composite SAM site
+ --["IR Guided SAM"] = {"SAM"},
+ --["SAM"] = {"SAM related", "Armed Air Defence", "Ground vehicles"}, --autonomous SAM unit (surveillance + guidance + launcher(s))
+ --["SAM related"] = {"Air Defence"}, --all units those related to SAM
+ --["AAA"] = {"Air Defence", "Armed Air Defence", "Rocket Attack Valid AirDefence",},
+ --["EWR"] = {"Air Defence vehicles",},
+ --["Air Defence vehicles"] = {"Air Defence","Ground vehicles",},
+ --["MANPADS"] = {"IR Guided SAM","Infantry","Rocket Attack Valid AirDefence",},
+ --["MANPADS AUX"] = {"Infantry","Rocket Attack Valid AirDefence","SAM AUX"},
+ --["Unarmed vehicles"] = {"Ground vehicles","Ground Units Non Airdefence","NonArmoredUnits",},
+ --["Armed ground units"] = {"Ground Units","Ground Units Non Airdefence",},
+ --["Armed Air Defence"] = {}, --air-defence units those have weapon onboard (SAM or AAA)
+ --["Air Defence"] = {"NonArmoredUnits"},
+ --["Aircraft Carriers"] = {"Heavy armed ships",},
+ --["Cruisers"] = {"Heavy armed ships",},
+ --["Destroyers"] = {"Heavy armed ships",},
+ --["Frigates"] = {"Heavy armed ships",},
+ --["Corvettes"] = {"Heavy armed ships",},
+ --["Heavy armed ships"] = {"Armed ships", "Armed Air Defence", "HeavyArmoredUnits",},
+ --["Light armed ships"] = {"Armed ships","NonArmoredUnits"},
+ --["Armed ships"] = {"Ships"},
+ --["Unarmed ships"] = {"Ships","HeavyArmoredUnits",},
+ --["Air"] = {"All","NonArmoredUnits",},
+ --["Ground vehicles"] = {"Ground Units", "Vehicles"},
+ --["Ships"] = {"All",},
+ --["Buildings"] = {"HeavyArmoredUnits",},
+ --["HeavyArmoredUnits"] = {},
+ --["ATGM"] = {},
+ --["Old Tanks"] = {},
+ --["Modern Tanks"] = {},
+ --["LightArmoredUnits"] = {"NonAndLightArmoredUnits",},
+ --["Rocket Attack Valid AirDefence"] = {},
+ --["Battle airplanes"] = {},
+ --["All"] = {},
+ --["Infantry carriers"] = {},
+ --["Vehicles"] = {},
+ --["Ground Units"] = {"All",},
+ --["Ground Units Non Airdefence"] = {},
+ --["Armored vehicles"] = {},
+ --["AntiAir Armed Vehicles"] = {}, --ground vehicles those capable of effective fire at aircrafts
+ --["Airfields"] = {},
+ --["Heliports"] = {},
+ --["Grass Airfields"] = {},
+ --["Point"] = {},
+ --["NonArmoredUnits"] = {"NonAndLightArmoredUnits",},
+ --["NonAndLightArmoredUnits"] = {},
+ --["human_vehicle"] = {}, -- player controlable vehicle
+ --["RADAR_BAND1_FOR_ARM"] = {},
+ --["RADAR_BAND2_FOR_ARM"] = {},
+ --["Prone"] = {},
+ --["DetectionByAWACS"] = {}, -- for navy\ground units with external target detection
+ --["Datalink"] = {}, -- for air\navy\ground units with on-board datalink station
+ --["CustomAimPoint"] = {}, -- unit has custom aiming point
+ --["Indirect fire"] = {},
+ --["Refuelable"] = {},
+ --["Weapon"] = {"Shell", "Rocket", "Bomb", "Missile"},
+--#endregion
+
+--#region DCS unit classification
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is AAA
+function HC.IsAAA(unit)
+    local attr = unit:getDesc().attributes
+    if attr["AAA"] then
+        return true
+    end
+    return false
+end    
+
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is SAM
+function HC.IsSAM(unit)
+    local attr = unit:getDesc().attributes
+    if attr["SAM"] or attr["SAM related"] then
+        return true
+    end
+    return false
+end  
+
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is fixed wing aircraft
+function HC.IsPlane(unit)
+    local attr = unit:getDesc().attributes
+    if attr["Planes"] or attr["Battle airplanes"] then
+        return true
+    end
+    return false
+end
+
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is a helicopter
+function HC.IsHelicopter(unit)
+    local attr = unit:getDesc().attributes
+    if attr["Helicopters"] then
+        return true
+    end
+    return false
+end
+
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is a helicopter
+function HC.IsTank(unit)
+    local attr = unit:getDesc().attributes
+    if attr["Tanks"] and (attr["Old Tanks"] or attr["Modern Tanks"]) then
+        return true
+    end
+    return false
+end
+
+---@param unit DCSUnit DCS unit to check
+---@return boolean #true if unit is a early warning radar
+function HC.IsEWR(unit)
+    local attr = unit:getDesc().attributes
+    if (attr["EWR"]) then
+        return true
+    end
+    return false
+end
+
+--#endregion
+--Calculates the damage to inflict to airbase when related unit is destroyed
+---@param unit DCSUnit DCS unit to check
+---@return number #Damage in %
+function HC.CalculateDamageForUnitLost(unit)
+    if (Unit.getPlayerName(unit)) then
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.PLAYER
+    elseif (HC.IsPlane(unit)) then
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.AIRCRAFT
+    elseif(HC.IsHelicopter(unit)) then
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.HELICOPTER
+    elseif(HC.IsAAA(unit)) then    
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.AAA
+    elseif(HC.IsSAM(unit)) then 
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.SAM
+    elseif(HC.IsEWR(unit)) then 
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.EWR
+    elseif(HC.IsTank(unit)) then             
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.TANK
+    else
+        return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.DEFAULT
+    end
+end
+    

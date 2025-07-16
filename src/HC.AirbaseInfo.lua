@@ -83,21 +83,21 @@ function AIRBASEINFO:DrawLabel()
     elseif (ab:GetCoalition()  == coalition.side.BLUE) then
         enemyChief = HC.RED.CHIEF
     end
-
-    for i=1, #(enemyChief.commander.missionqueue) do
-        local mission = enemyChief.commander.missionqueue[i]
-        local target = mission.engageTarget
-        if (target) then
-            local pos = target:GetCoordinate()
-            local thisZone = ZONE:FindByName(self.Name)
-            if(mission.missionTask ~= "Nothing") then
-                if (thisZone:IsVec3InZone(pos)) then
-                    missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
-                end                
+    if (enemyChief) then
+        for i=1, #(enemyChief.commander.missionqueue) do
+            local mission = enemyChief.commander.missionqueue[i]
+            local target = mission.engageTarget
+            if (target) then
+                local pos = target:GetCoordinate()
+                local thisZone = ZONE:FindByName(self.Name)
+                if(mission.missionTask ~= "Nothing") then
+                    if (thisZone:IsVec3InZone(pos)) then
+                        missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
+                    end                
+                end
             end
-        end
+        end        
     end
-
     self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
 end 
 
@@ -138,4 +138,17 @@ function AIRBASEINFO:IsFrontline()
     local airbase = AIRBASE:FindByName(self.Name)
     return HC:IsFrontlineAirbase(airbase)
 end
+
+--Apply damage to airbase proportional to "value" of the unit lost
+---@param airbaseName string Airbase name
+---@unit unit DCSUnit Destroyed unit related to airbase
+function AIRBASEINFO.ApplyAirbaseUnitLossPenalty(airbaseName, unit)
+    if (not airbaseName or not unit) then
+        return
+    end
+    local damage = HC.CalculateDamageForUnitLost(unit)
+    HC:T(string.format("Applying %.1f damage to %s", damage, airbaseName))
+    HC:AirbaseResupply(airbaseName, - damage)
+end
+
 env.info("HC.AIRBASEINFO loaded")

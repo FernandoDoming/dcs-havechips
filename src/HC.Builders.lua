@@ -125,6 +125,25 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
     return warehouse
 end
 
+--Cleans up junk around airbase
+---@param airbaseName string target airbase to clean up
+function HC:AirbaseCleanJunk(airbaseName)
+    HC:T("Clearing junk around "..airbaseName)
+    local airbase = AIRBASE:FindByName(airbaseName)
+    if (not airbase) then    
+        return
+    end
+  local radius = 4000 --should be enough
+  local sphere = {
+    id = world.VolumeType.SPHERE,
+      params = {
+      point = airbase:GetCoordinate():GetVec3(),
+      radius = radius,
+      }
+    }
+   world.removeJunk(sphere) 
+end    
+
 --Spawns FARP support units necessary for functional FARP
 ---@param farp AIRBASE FARP to set up
 function HC:SetupFARPSupportUnits(farp)
@@ -171,7 +190,7 @@ function HC:SetupFARPSupportUnits(farp)
         spawnObj = SPAWNSTATIC:NewFromType(v.TypeName,v.Category,spawnCountry)
         --spawnObj:InitShape(_object.ShapeName)
         spawnObj:InitHeading(farpStatic:GetHeading())
-        spawnObj:SpawnFromCoordinate(v.Position,farpStatic:GetHeading(),farpName.." "..k)
+        spawnObj:SpawnFromCoordinate(v.Position,farpStatic:GetHeading(),farpName.."|| "..k)
     end
 end
 
@@ -259,7 +278,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     --Ground units
     local brigade=BRIGADE:New(warehouse:GetName(), brigadeName)
     for i=1, #(templates.LIGHT_INFANTRY) do
-        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, string.format("%s Infantry %d %s", side, i, airbase:GetName()))
+        local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, string.format("%s|| Infantry %s %d", airbase:GetName(), side, i))
         platoon:SetGrouping(4)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.ONGURAD}, 70)
         -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
@@ -269,7 +288,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.MECHANIZED) do
-        local platoon = PLATOON:New(templates.MECHANIZED[i], 2, string.format("%s Mechanized inf %d %s", side,i, airbase:GetName()))
+        local platoon = PLATOON:New(templates.MECHANIZED[i], 2, string.format("%s|| Mechanized infantry %s %d", airbase:GetName(), side, i))
         platoon:SetGrouping(5)
         platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
@@ -278,7 +297,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         brigade:AddPlatoon(platoon)
     end
     for i=1, #(templates.TANK) do
-        local platoon = PLATOON:New(templates.TANK[i], 2, string.format("%s Tank %d %s", side, i, airbase:GetName()))
+        local platoon = PLATOON:New(templates.TANK[i], 2, string.format("%s|| Tank %s %d", airbase:GetName(), side, i))
         platoon:SetGrouping(6)
         platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
         platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
@@ -307,7 +326,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     
     for i=1, #(templates.TRANSPORT_HELI) do
             local templateGroupName = templates.TRANSPORT_HELI[i]
-            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 4, string.format("%s Helicopter Transport Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+            local squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 4, string.format("%s|| Transport Helicopter %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
             squadron:SetGrouping(1) -- 1 aircraft per group.
             squadron:SetModex(10)  -- Tail number of the sqaud start with 60
@@ -322,7 +341,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     end
     for i=1, #(templates.ATTACK_HELI) do
             local templateGroupName = templates.ATTACK_HELI[i]
-            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 2, string.format("%s Attack Helicopter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+            local squadron=SQUADRON:New(templates.ATTACK_HELI[i], 2, string.format("%s|| Attack Helicopter %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
             squadron:SetGrouping(2)
             squadron:SetModex(30)
             squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
@@ -339,7 +358,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways)>0) then
         for i=1, #(templates.CAP) do
                 local templateGroupName = templates.CAP[i]
-                local squadron=SQUADRON:New(templates.CAP[i], 2, string.format("%s Fighter Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.CAP[i], 2, string.format("%s|| Fighter Sq. %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(10)
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90)
@@ -353,7 +372,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         end
         for i=1, #(templates.CAS) do
                 local templateGroupName = templates.CAS[i]
-                local squadron=SQUADRON:New(templates.CAS[i], 2, string.format("%s Attack Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.CAS[i], 2, string.format("%s|| Attack Sq. %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(30)
                 squadron:AddMissionCapability(STRIKER_TASKS, 90)
@@ -367,7 +386,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         end
         for i=1, #(templates.STRIKE) do
                 local templateGroupName = templates.STRIKE[i]
-                local squadron=SQUADRON:New(templates.STRIKE[i], 2, string.format("%s Strike Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.STRIKE[i], 2, string.format("%s|| Strike Sq. %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(50)
                 squadron:AddMissionCapability(STRIKER_TASKS, 90)
@@ -381,7 +400,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         end
             for i=1, #(templates.SEAD) do
                 local templateGroupName = templates.SEAD[i]
-                local squadron=SQUADRON:New(templates.SEAD[i], 1, string.format("%s SEAD Squadron %d %s", side, i, airbase:GetName())) --Ops.Squadron#SQUADRON
+                local squadron=SQUADRON:New(templates.SEAD[i], 1, string.format("%s|| SEAD Sq. %s %d", airbase:GetName(), side, i)) --Ops.Squadron#SQUADRON
                 squadron:SetGrouping(2)
                 squadron:SetModex(60)
                 squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)
@@ -448,7 +467,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone bor BASE GARRISON", ab:GetName()))
             break
         end
-        local unitAlias = string.format("%s D SECURITY %d", ab:GetName(), i)
+        local unitAlias = string.format("%s|| D SECURITY %d", ab:GetName(), i)
         local spawn = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
@@ -457,10 +476,6 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         )
         :InitRandomizeTemplate(templates.BASE_SECURITY)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
-        group:HandleEvent(EVENTS.UnitLost)
-        function group:OnEventUnitLost(e)
-            HC:E("One of the units in group was killed?")
-        end
         childZonesSet:RemoveZonesByName(randomZone:GetName())
         HC.OccupiedSpawnZones[randomZone:GetName()] = true
         chief:AddAgent(group)
@@ -472,15 +487,11 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone for SHORAD", ab:GetName()))
             break
         end
-        local unitAlias = string.format("%s D SHORAD %d", ab:GetName(), i)
+        local unitAlias = string.format("%s|| D SHORAD %d", ab:GetName(), i)
         local spawn = SPAWN:NewWithAlias(templates.SHORAD[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-                grp:HandleEvent( EVENTS.UnitLost )
-                function grp:OnEventUnitLost(e)
-                    HC:T("Group"..self:GetName().." lost a unit")            
-                end
             end
         )
         :InitRandomizeTemplate(templates.SHORAD)
@@ -496,15 +507,11 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone for SAM", ab:GetName()))
             break
         end
-        local unitAlias = string.format("%s D SAM %d", ab:GetName(), i)
+        local unitAlias = string.format("%s|| D SAM %d", ab:GetName(), i)
         local spawn = SPAWN:NewWithAlias(templates.SAM[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-                grp:HandleEvent( EVENTS.UnitLost )
-                function grp:OnEventUnitLost(e)
-                    HC:T("Group"..self:GetName().." lost a unit")            
-                end
             end
         )
         :InitRandomizeTemplate(templates.SAM)
@@ -521,15 +528,11 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", ab:GetName()))
             break
         end
-        local unitAlias = string.format("EWR %s %s %d", side, ab:GetName(), i)
+        local unitAlias = string.format("%s|| %s EWR %d", ab:GetName(), side, i)
         local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
                 HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-                grp:HandleEvent( EVENTS.UnitLost )
-                function grp:OnEventUnitLost(e)
-                    HC:T("Group"..self:GetName().." lost a unit")            
-                end
             end
         )
         :InitRandomizeTemplate(templates.EWR)
@@ -540,21 +543,39 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     end    
 end
 
+
 --Resupply of all airbases and FARPs
 ---@param resupplyPercent number - resupply amount in percent
-function HC:AirbaseResupply(resupplyPercent)
+function HC:AirbaseResupplyAll(resupplyPercent)
     HC:T("Passive resupply triggered")
-    for _, abi in pairs(HC.ActiveAirbases) do
-        local ab = AIRBASE:FindByName(abi.Name)
-        abi.Coalition = ab:GetCoalition()
-        if(abi.HP + resupplyPercent <= 100) then
-            abi.HP = abi.HP + resupplyPercent
-        else
-            abi.HP = 100
-        end
+    for airbaseName, _ in pairs(HC.ActiveAirbases) do
+        HC:AirbaseResupply(airbaseName, resupplyPercent)
+    end
+end
+
+---Resupplies airbase specified by airbase name with specified amount
+---@param airbaseName string airbase name
+---@param resupplyPercent number - resupply amount in percent
+function HC:AirbaseResupply(airbaseName, resupplyPercent)
+    local ab = AIRBASE:FindByName(airbaseName)
+    local abi = HC.ActiveAirbases[airbaseName]
+    if (not ab or not abi) then
+        return
+    end
+    abi.Coalition = ab:GetCoalition()
+    if(abi.HP + resupplyPercent > 100) then
+        abi.HP = 100
+        abi:DrawLabel()            
+        return
+    elseif (abi.HP + resupplyPercent < 0) then
+        abi.HP = 0 --maybe neutralize base/zone
         abi:DrawLabel()
-    end        
-end  
+        return
+    else
+        abi.HP = abi.HP + resupplyPercent          
+        abi:DrawLabel()
+    end     
+end
 
 --Creates MOOSE CHIEF object
 ---@param side string RED or BLUE

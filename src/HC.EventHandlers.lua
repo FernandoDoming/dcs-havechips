@@ -10,7 +10,7 @@ end
 function HC:OnLongTick()
     --This will go in long tick!
     local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
-    HC:AirbaseResupply(resupplyPercent) 
+    HC:AirbaseResupplyAll(resupplyPercent)
 end
 
 --#region ------------------- DCS events -------------------
@@ -34,39 +34,38 @@ function HC:OnEventKill(e)
     --  Cargo   6
     
     if (e and e.IniCategory and e.IniCoalition and e.IniTypeName and e.IniObjectCategory
-    and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
-    and e.WeaponName) then
-        local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniTypeName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtTypeName, e.WeaponName)
-        HC:W(BDA)
+        and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
+        and e.WeaponName) then
+        local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniUnit:GetDesc().displayName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtDCSUnit:getDesc().displayName, e.weapon:getDesc().displayName)
         MESSAGE:New(BDA, 10):ToAll()
+    end  
+end
 
-        --if unit is ground unit - damage airbase where it was destroyed
-        --if unit is air unit - damage airbase from which it came from
-        if(e.TgtObjectCategory == Object.Category.UNIT or e.TgtObjectCategory == Object.Category.STATIC) then
-            --Find which airbase and apply damage
-            if (e.TgtDCSUnit) then
-                local position = e.TgtDCSUnit:getPosition() --x,y,z
-                local tgtCoalitionName = UTILS.GetCoalitionName(e.TgtCoalition)
-                local friendlyBases = SET_AIRBASE:New():FilterCoalitions(string.lower(tgtCoalitionName)):FilterOnce()
-                friendlyBases:ForEachAirbase(
-                    function(b)
-                        HC:T("Base in filtered set "..b:GetCoalitionName().." "..b:GetName())
-                    end
-                )
-                local coord = COORDINATE:NewFromVec3(position.p)
-                local b, dist = coord:GetClosestAirbase()
-                if (dist <= 2500 and b:GetCoalition() == e.TgtCoalition) then
-                    --Unit killed within friendly airbase/FARP range
-                    HC:T(string.format("Unit killed %d from %s, should apply damage to airbase", dist, b:GetName()))
-                    local abi = HC.ActiveAirbases[b:GetName()]
-                    if (abi) then
-                        --placeholder, damage will be calculated based on unit type
-                        abi.HP = math.max(0, abi.HP -5)                         
-                    end
-                end
-            end
+---@param e EVENTDATA Event data
+function HC:OnEventUnitLost(e)
+    HC:W("HC.EVENT OnEventUnitLost")
+    if (e.IniPlayerName) then
+        --Handle player OnEventDead
+        return
+    end
+    if (e.IniObjectCategory == Object.Category.UNIT) then
+        local baseName = string.match(e.IniDCSUnitName, '.-||')
+        if (not baseName) then
+            return
         end
-    end    
+        baseName = string.sub(baseName, 1, string.len(baseName) - 2)
+        AIRBASEINFO.ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
+        HC:T(string.format("Unit %s %s belonging to %s got destroyed", e.IniDCSUnit:getDesc().typeName, e.IniUnitName, baseName))
+    elseif(e.IniObjectCategory == Object.Category.STATIC) then
+        local baseName = string.match(e.IniDCSUnitName, '.-||')
+        if (not baseName) then
+            return
+        end
+        baseName = string.sub(baseName, 1, string.len(baseName) - 2)
+        AIRBASEINFO:ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
+        HC:T(string.format("Static %s % belonging to %s got destroyed", e.IniDCSUnit:getDesc().typeName, e.IniUnitName, baseName))
+    end
+    return true
 end
 
 ---@param e EVENTDATA Event data
@@ -146,12 +145,19 @@ end
 --#region ---------------- OpsZone FSM events --------------
 function HC:OnAfterCaptured(From, Event, To, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterCaptured")
+    local zoneCoalition = opsZone:GetOwner()
     local airbase = AIRBASE:FindByName(opsZone:GetName())
     local abi = HC.ActiveAirbases[opsZone:GetName()]
-    abi.Coalition = opsZone:GetOwner()
+    abi.Coalition = zoneCoalition
     abi.HP = 20
     abi:DrawLabel()
     airbase:SetCoalition(abi.Coalition)
+    if (zoneCoalition ~= coalition.side.RED and zoneCoalition ~= coalition.side.BLUE) then
+        opsZone:SetDrawZone(true)
+        return
+    end
+    opsZone:SetDrawZone(false)
+    HC:AirbaseCleanJunk(airbase:GetName())
     HC:SetupAirbaseInventory(airbase)
     local staticWarehouse = HC:SetupAirbaseStaticWarehouse(airbase)
     HC:SetupAirbaseChiefUnits(staticWarehouse, airbase)
@@ -163,7 +169,7 @@ function HC:OnAfterEmpty(From, Event, To, opsZone)
     --to do neutralize
 end
 
-function HC:OnAfterAttacked(HC, From, Event, To, AttackerCoalition, self)
+function HC:OnAfterAttacked(From, Event, To, AttackerCoalition, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterAttacked")
 end
 --#endregion
