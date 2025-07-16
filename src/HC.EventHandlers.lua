@@ -1,6 +1,5 @@
 function HC:OnShortTick()
-    for i=1, #(HC.ActiveAirbases) do
-        local abi = HC.ActiveAirbases[i]
+    for _, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(abi.Name)
         abi.Coalition = ab:GetCoalition()
         abi:DrawLabel()
@@ -37,8 +36,9 @@ function HC:OnEventKill(e)
         and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
         and e.WeaponName) then
         local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniUnit:GetDesc().displayName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtDCSUnit:getDesc().displayName, e.weapon:getDesc().displayName)
-        MESSAGE:New(BDA, 10):ToAll()
-    end  
+        MESSAGE:New(BDA, 10):ToAll() --for debugging purposes
+        HC:T(BDA)        
+    end
 end
 
 ---@param e EVENTDATA Event data
@@ -145,16 +145,20 @@ end
 --#region ---------------- OpsZone FSM events --------------
 function HC:OnAfterCaptured(From, Event, To, opsZone)
     HC:W("HC.EVENT OPSZONE OnAfterCaptured")
+    HC:T("Zone"..opsZone:GetName().." was captured by "..opsZone:GetOwnerName())
+    local airbase = AIRBASE:FindByName(opsZone:GetName())
+    HC:T("Airbase"..airbase:GetName().." is owned by "..airbase:GetCoalitionName())
+    ----------------------------------------------------------------------------------------
     local zoneCoalition = opsZone:GetOwner()
     local airbase = AIRBASE:FindByName(opsZone:GetName())
     local abi = HC.ActiveAirbases[opsZone:GetName()]
     abi.Coalition = zoneCoalition
     abi.HP = 20
     abi:DrawLabel()
-    airbase:SetCoalition(abi.Coalition)
+    --airbase:SetCoalition(abi.Coalition)
     if (zoneCoalition ~= coalition.side.RED and zoneCoalition ~= coalition.side.BLUE) then
-        opsZone:SetDrawZone(true)
-        return
+         opsZone:SetDrawZone(true)
+         return
     end
     opsZone:SetDrawZone(false)
     HC:AirbaseCleanJunk(airbase:GetName())

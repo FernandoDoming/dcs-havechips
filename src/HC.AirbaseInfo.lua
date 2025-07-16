@@ -6,7 +6,8 @@ AIRBASEINFO = {
     Name = nil, --Airbase name
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL, --Current coalition
-    MarkId = nil --Label MarkId on F10 Map
+    MarkIdFriendly = nil, --Label MarkId on F10 Map for friendly players
+    MarkIdEnemy = nil --Label MarkId on F10 Map for enemy players
 }
 
 --Gets Data table to be persisted on mission restarts
@@ -35,6 +36,8 @@ function AIRBASEINFO:DrawLabel()
     local textSize = 12
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
+
+    --#region setting up style
     if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
         colorText = COLOR_MAIN_BASE_TEXT
     else
@@ -59,10 +62,6 @@ function AIRBASEINFO:DrawLabel()
     if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
         colorText = {1, 1, 0.5}
     end
-    if(self.MarkId ~= nil) then
-        --env.info("Removing mark "..self.MarkId)
-        coord:RemoveMark(self.MarkId)
-    end
     local HPIndicator =""
     for i=1, math.floor(self.HP/10) do
         HPIndicator = HPIndicator.."█"
@@ -71,34 +70,84 @@ function AIRBASEINFO:DrawLabel()
         HPIndicator = HPIndicator.."░"
     end
     local baseTypePrefix = " "
-    if (ab:GetCategory() == Airbase.Category.HELIPAD) then
+    if (ab:GetCategory() == Airbase.Category.HELIPAD and #(ab.runways) == 0) then
         baseTypePrefix = "FARP"
     end
-
-    --Possibly could be better to use chief.targetqueue
+--#endregion
+    
+    --remove previous label
+    if(self.MarkIdFriendly ~= nil) then
+        --env.info("Removing mark "..self.MarkId)
+        coord:RemoveMark(self.MarkIdFriendly)
+        self.MarkIdFriendly = nil
+    end
+        if(self.MarkIdEnemy ~= nil) then
+        --env.info("Removing mark "..self.MarkId)
+        coord:RemoveMark(self.MarkIdEnemy)
+        self.MarkIdEnemy = nil
+    end
+--Possibly could be better to use chief.targetqueue
     local enemyChief = nil
+    local enemyCoalition = nil
     local missionListText = ""
     if (ab:GetCoalition() == coalition.side.RED) then
         enemyChief = HC.BLUE.CHIEF
+        enemyCoalition = coalition.side.BLUE
     elseif (ab:GetCoalition()  == coalition.side.BLUE) then
+        enemyCoalition = coalition.side.RED
         enemyChief = HC.RED.CHIEF
     end
+
+    --Opszone approach
+    local friendlyMisionsText = "" --missions by side opposing the current owner
+    local enemyMissionsText = "" --missions by current side owner
+    local friendlyMissionIds = {}
+    local enemyMissionIds = {}
+    local oz = OPSZONE:FindByName(self.Name)
+    --Missions directly targeting zone
+    if(oz) then
+        for _, m in pairs(oz.Missions) do
+            if (m.Coalition ~= self.Coalition) then
+                if (not enemyMissionIds["Anr" ..m.Mission.auftragsnummer]) then
+                    enemyMissionsText = enemyMissionsText..string.format(" AI %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
+                    enemyMissionIds["Anr" ..m.Mission.auftragsnummer] = true
+                end
+            else
+                if (not friendlyMissionIds["Anr" ..m.Mission.auftragsnummer]) then
+                    friendlyMisionsText = friendlyMisionsText..string.format(" AI Friendly %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
+                    friendlyMissionIds["Anr" ..m.Mission.auftragsnummer] = true
+                end
+            end
+        end
+    end
+    --Missions with target in zone
     if (enemyChief) then
         for i=1, #(enemyChief.commander.missionqueue) do
-            local mission = enemyChief.commander.missionqueue[i]
-            local target = mission.engageTarget
+            local m = enemyChief.commander.missionqueue[i]
+            local target = m.engageTarget
             if (target) then
                 local pos = target:GetCoordinate()
                 local thisZone = ZONE:FindByName(self.Name)
-                if(mission.missionTask ~= "Nothing") then
-                    if (thisZone:IsVec3InZone(pos)) then
-                        missionListText = missionListText..string.format(" AI %s \n", mission.missionTask)
-                    end                
+                if (not enemyMissionIds["Anr" ..m.auftragsnummer]) then
+                    if(m.missionTask ~= "Nothing") then
+                        if (thisZone:IsVec3InZone(pos)) then
+                            enemyMissionsText = enemyMissionsText..string.format(" AI %s [#%s] \n", m.missionTask, m.auftragsnummer)
+                        end
+                        enemyMissionIds["Anr" ..m.auftragsnummer] = true
+                    end
                 end
             end
         end        
     end
-    self.MarkId = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, missionListText), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+    if (enemyCoalition) then
+        --friendlies don't get a list of enemy missions targeting the zone
+        self.MarkIdFriendly = coord:TextToAll(string.format(" FR %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+        self.MarkIdEnemy = coord:TextToAll(string.format(" EN %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText), enemyCoalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
+    else
+        --neutral
+        self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
+    end
+
 end 
 
 ---Constructor, creates AIRBASE info from AIRBASE object
@@ -111,7 +160,8 @@ function AIRBASEINFO:NewFromAIRBASE(airbase, hp)
     o.Name = airbase:GetName()
     o.HP = hp or 100
     o.Coalition = airbase:GetCoalition()
-    o.MarkId = nil
+    o.MarkIdFriendly = nil
+    o.MarkIdEnemy = nil
     setmetatable(o, self)
     self.__index = self
     return o
@@ -126,7 +176,8 @@ function AIRBASEINFO:NewFromTable(table)
     o.Name = table.Name
     o.HP = table.HP
     o.Coalition = table.Coalition
-    o.MarkId = nil
+    o.MarkIdFriendly = nil
+    o.MarkIdEnemy = nil
     setmetatable(o, self)
     self.__index = self
     return o

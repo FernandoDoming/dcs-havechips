@@ -22,14 +22,12 @@ end
 ---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
 ---@return table #table of child zones
 function HC:GetChildZones(parent, onlyAvailableForSpawn)
-    onlyAvailableForSpawn = onlyAvailableForSpawn or true
+    if (onlyAvailableForSpawn == nil) then onlyAvailableForSpawn = true end
     local chilldZones = {}
     for _, zone in pairs(_DATABASE.ZONES) do
         local childVec3 = zone:GetVec3()
-        if (parent:IsVec3InZone(childVec3) 
-            and parent:GetName() ~= zone:GetName() --exclude the situation where parent is returned alongside its child zones
-            ) then 
-            if (onlyAvailableForSpawn) then
+        if (parent:IsVec3InZone(childVec3) and parent:GetName() ~= zone:GetName()) then --exclude the situation where parent is returned alongside its child zones
+            if (onlyAvailableForSpawn == true) then
                 if (not HC.OccupiedSpawnZones[zone:GetName()] and string.sub(zone:GetName(), 1,9) ~= "Warehouse") then
                     table.insert(chilldZones, zone)  
                 end
@@ -47,7 +45,6 @@ end
 ---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
 ---@return SET_ZONE #Set of child zones
 function HC:GetChildZoneSet(parent, onlyAvailableForSpawn)
-    onlyAvailableForSpawn = onlyAvailableForSpawn or true
     local childZones = HC:GetChildZones(parent, onlyAvailableForSpawn)
     local zoneSet = SET_ZONE:New()
     for _, zone in pairs(childZones) do
@@ -62,7 +59,7 @@ end
 ---@param onlyAvailableForSpawn boolean if true, return only zones not marked as occupied
 ---@return ZONE? #A random child zone for specified parent, nil if zone can't be found
 function HC:GetRandomChildZone(parent, onlyAvailableForSpawn)
-    onlyAvailableForSpawn = onlyAvailableForSpawn or true
+    if (onlyAvailableForSpawn == nil) then onlyAvailableForSpawn = true end
     local cz = HC:GetChildZones(parent, onlyAvailableForSpawn)
     if (#cz > 0) then
         return cz[math.random(#cz)]
@@ -95,6 +92,20 @@ function HC:IsFrontlineAirbase(airbase)
     local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
     return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000)
 end
+
+--goes through all airbase (specified by airbase name) spawn zones on marked as occupied and checks if they are empty
+--if the zone is empty, remove it from OccupiedZones list 
+---@param airbaseName string Airbase name
+function HC:CheckFreeSpawnZones(airbaseName)
+    local zone = ZONE:FindByName(airbaseName)
+    local childZones =  HC:GetChildZoneSet(zone, false)
+    childZones:ForEachZone(
+        function(spawnZone)
+            spawnZone:Scan({Object.Category.UNIT, Object.Category.STATIC},{Unit.Category.GROUND_UNIT, Unit.Category.STRUCTURE})
+            HC.OccupiedSpawnZones[spawnZone:GetName()] = not spawnZone:IsNoneInZone()
+        end
+    )
+end    
 
 --Checks if file specified by filename path exists
 ---@param filename string path to check

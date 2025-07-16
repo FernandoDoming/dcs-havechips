@@ -28,6 +28,7 @@ HC = {
     LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds 
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
     EventHandler = {},
+    WAREHOUSE_RESPAWN_INTERVAL = 1 * 60, --interval in seconds for warehouse respawn if destroyed
     AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST = {
         DEFAULT = 0.5,
         AAA = 1,
