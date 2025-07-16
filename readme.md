@@ -1,10 +1,10 @@
 # Have Chips
 
-Have Chips is DCS World multiplayer PvPvE dynamic mission system
+"Have Chips" (our temporary codename) is a DCS World multiplayer PvPvE dynamic mission system.
 
 ### **Mission**
 
-Develop a dynamic DCS multiplayer persistent mission system
+Develop a dynamic DCS multiplayer persistent mission system.
 
 ### **Vision**
 
@@ -15,7 +15,7 @@ DCS isn't built for that, if strategic supply simulation is your thing use Exel 
 
 ### **Goals**
 
-**Templating system** enables creating different scenarios using DCS Mission Editor
+**Templating system** enables creating different scenarios using DCS Mission Editor.
 
 *   Easy to customize player planeset, weaponset  
     Player planeset and weapons configuration is done ONE place in editor, no need to configure individual bases/FARPS
@@ -24,14 +24,14 @@ DCS isn't built for that, if strategic supply simulation is your thing use Exel 
 *   Strategic zones (Airbases/FARPs) configurable in editor  
     Strategic zones are configured by setting ownership to airfields/FARPS to RED or BLUE in mission editor. HC will find those on first mission run, and take care of persistence accross mission iterations.
 
-**24/7 living battlefield** driven by "AI" makes it possible to jump in and have fun regardless of how many human players are present
+**24/7 living battlefield** driven by "AI" makes it possible to jump in and have fun regardless of how many human players are present.
 
 *   AI will always provide action yet won't overwhelm the players
 *   AI will be the "background" of PvP action providing mission opportunities, support as well as opposition to players
 
-**Interactive mission menu** drives players to concrete objectives giving each sortie a purpose
+**Interactive mission menu** drives players to concrete objectives giving each sortie a purpose.
 
 *   Players can choose mission targets suggested by HC and get rewards when mission is completed
 *   Completing missions allows players to take advantage of additional benfits like ask AI escort, JTAC etc
 
-**Player persistent career** progression unlocks additional in game perks like additional mission choices or AI support options
+**Player persistent career** progression unlocks additional in game perks like additional mission choices or AI support options.
