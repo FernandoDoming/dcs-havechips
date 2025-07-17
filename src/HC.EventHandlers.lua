@@ -1,11 +1,16 @@
 --#region ------------------- Timer events -------------------
 function HC:OnBaseRepairTick()
 HC:E("BASE REPAIR TICK START")
+    local delay = 0
     for name, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(name)
         abi.Coalition = ab:GetCoalition()
         abi:DrawLabel()
-        HC:SetupAirbaseDefense(ab, abi.HP, nil)
+        delay = delay + 1
+        --HC:SetupAirbaseDefense(ab, abi.HP, nil)
+        --stagger the execution 1s between each base repair call
+        local mytimer = TIMER:New(HC.SetupAirbaseDefense, HC, ab, abi.HP)
+        mytimer:Start(delay)
     end
 HC:E("BASE REPAIR TICK END")
 end
@@ -26,7 +31,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventKill(e)
-    --HC:W("HC.EVENT OnEventKill")
+    HC:W("HC.EVENT OnEventKill")
     --   Unit.Category
     --   AIRPLANE      = 0,
     --   HELICOPTER    = 1,
@@ -53,7 +58,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventUnitLost(e)
-    --HC:W("HC.EVENT OnEventUnitLost")
+    HC:W("HC.EVENT OnEventUnitLost")
     if (e.IniPlayerName) then
         --Handle player OnEventDead
         return
@@ -116,7 +121,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventEjection(e)
-    HC:W("HC.EVENT OnEventTakeoff")
+    --HC:W("HC.EVENT OnEventEjection")
 end
 
 ---@param e EVENTDATA Event data
@@ -179,12 +184,12 @@ function HC:OnAfterCaptured(From, Event, To, opsZone)
 end
 
 function HC:OnAfterEmpty(From, Event, To, opsZone)
-    HC:W("HC.EVENT OPSZONE OnAfterEmpty")
+    --HC:W("HC.EVENT OPSZONE OnAfterEmpty")
     --to do neutralize
 end
 
 function HC:OnAfterAttacked(From, Event, To, AttackerCoalition, opsZone)
-    HC:W("HC.EVENT OPSZONE OnAfterAttacked")
+    --HC:W("HC.EVENT OPSZONE OnAfterAttacked")
 end
 --#endregion
 

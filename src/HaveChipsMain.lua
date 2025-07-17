@@ -169,20 +169,28 @@ function HC:Start()
     --#region ---------- Event handlers -------------
     
     HC.EventHandler = EVENTHANDLER:New()
-    HC.EventHandler:HandleEvent(EVENTS.BaseCaptured, HC.OnEventBaseCaptured)
-    HC.EventHandler:HandleEvent(EVENTS.Dead, HC.OnEventDead)
+    --HC.EventHandler:HandleEvent(EVENTS.BaseCaptured, HC.OnEventBaseCaptured)
+    --HC.EventHandler:HandleEvent(EVENTS.Dead, HC.OnEventDead)
     HC.EventHandler:HandleEvent(EVENTS.MissionEnd, HC.OnEventMissionEnd)
-    HC.EventHandler:HandleEvent(EVENTS.PilotDead, HC.OnEventPilotDead)
-    HC.EventHandler:HandleEvent(EVENTS.Shot, HC.OnEventShot)
+    --HC.EventHandler:HandleEvent(EVENTS.PilotDead, HC.OnEventPilotDead)
+    --HC.EventHandler:HandleEvent(EVENTS.Shot, HC.OnEventShot)
     HC.EventHandler:HandleEvent(EVENTS.UnitLost, HC.OnEventUnitLost)
-    HC.EventHandler:HandleEvent(EVENTS.BDA, HC.OnEventBDA)
-    HC.EventHandler:HandleEvent(EVENTS.Takeoff, HC.OnEventTakeoff)
-    HC.EventHandler:HandleEvent(EVENTS.LandingAfterEjection, HC.OnEventLandingAfterEjection)
+    --HC.EventHandler:HandleEvent(EVENTS.BDA, HC.OnEventBDA)
+    --HC.EventHandler:HandleEvent(EVENTS.Takeoff, HC.OnEventTakeoff)
+    --HC.EventHandler:HandleEvent(EVENTS.LandingAfterEjection, HC.OnEventLandingAfterEjection)
     HC.EventHandler:HandleEvent(EVENTS.DiscardChairAfterEjection, HC.OnEventDiscardChairAfterEjection)
-    HC.EventHandler:HandleEvent(EVENTS.Ejection, HC.OnEventEjection)
-    HC.EventHandler:HandleEvent(EVENTS.Land, HC.OnEventLand)
+    --HC.EventHandler:HandleEvent(EVENTS.Ejection, HC.OnEventEjection)
+    --HC.EventHandler:HandleEvent(EVENTS.Land, HC.OnEventLand)
     HC.EventHandler:HandleEvent(EVENTS.Kill, HC.OnEventKill)
     --#endregion
+
+    local blinder = TIRESIAS:New()
+    -- Setup different radius for activation around helo and airplane groups (applies to AI and humans)
+     blinder:SetActivationRanges(15,30) -- defaults are 10, and 25
+     -- Setup engagement ranges for AAA (non-advanced SAM units like Flaks etc) and if you want them to be AIOff
+     blinder:SetAAARanges(60,true) -- defaults are 60, and true
+
+
     HC.BLUE.CHIEF:__Start(1)
     HC.RED.CHIEF:__Start(1)
     HC:T("Startup completed")

@@ -31,9 +31,9 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
     chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
-    chief:SetLimitMission(10, "Total")
+    chief:SetLimitMission(8, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
-    chief:SetTacticalOverviewOn() --for debugging
+    --chief:SetTacticalOverviewOn() --for debugging
     chief:SetVerbosity(0) --set to 5 for debugging
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
@@ -55,7 +55,7 @@ function HC:CreateChief(side, alias)
     
 
     function chief:OnAfterMissionAssign(From, Event, To, Mission, Legions)
-        HC:W("OnAfterMissionAssign")
+        --HC:W("OnAfterMissionAssign")
         --mission:SetRoe(ENUMS.ROE.)
     end
 
