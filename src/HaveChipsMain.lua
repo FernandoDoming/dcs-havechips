@@ -24,8 +24,10 @@ HC = {
     ActiveAirbases = {},
     SHORT_TICK_TIMER = nil, --reference to timer
     LONG_TICK_TIMER = nil, -- reference to timer
+    BASE_REPAIR_TIMER = nil, --reference to timer
     SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
-    LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds 
+    LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds
+    BASE_REPAIR_INTERVAL = 600, --base defense units are (re)spawned in this interval based on base HP at that moment
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
     EventHandler = {},
     WAREHOUSE_RESPAWN_INTERVAL = 1 * 60, --interval in seconds for warehouse respawn if destroyed
@@ -160,6 +162,9 @@ function HC:Start()
     HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
     HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
     HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
+    HC.BASE_REPAIR_TIMER = TIMER:New(HC.OnBaseRepairTick, HC)
+    HC.BASE_REPAIR_TIMER:Start(HC.BASE_REPAIR_INTERVAL,HC.BASE_REPAIR_INTERVAL)
+    --BASE_REPAIR_INTERVAL
     --#region ---------- Event handlers -------------
     
     HC.EventHandler = EVENTHANDLER:New()

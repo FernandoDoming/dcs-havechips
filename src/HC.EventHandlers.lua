@@ -1,16 +1,25 @@
-function HC:OnShortTick()
-    for _, abi in pairs(HC.ActiveAirbases) do
-        local ab = AIRBASE:FindByName(abi.Name)
+--#region ------------------- Timer events -------------------
+function HC:OnBaseRepairTick()
+    for name, abi in pairs(HC.ActiveAirbases) do
+        local ab = AIRBASE:FindByName(name)
         abi.Coalition = ab:GetCoalition()
         abi:DrawLabel()
+        HC:SetupAirbaseDefense(ab, abi.HP, nil)
     end
+
 end
 
 function HC:OnLongTick()
-    --This will go in long tick!
     local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
     HC:AirbaseResupplyAll(resupplyPercent)
 end
+
+function HC:OnShortTick()    
+    for _, abi in pairs(HC.ActiveAirbases) do
+        abi:DrawLabel()
+    end
+end
+--#endregion
 
 --#region ------------------- DCS events -------------------
 

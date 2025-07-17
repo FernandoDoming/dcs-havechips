@@ -454,6 +454,21 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     chief:AddAirwing(airwing) 
 end
 
+-- function HC:DestroyGarrisonUnitsAboveTier(zone, prefix, tier)
+--     local MAX_GARRISON_GROUPS_IN_CATEGORY = 6 --probably won't go higher
+--     SET_GROUP:New():FilterZones({ab.AirbaseZone}, false):FilterPrefixes(prefix):FilterOnce():ForEachGroup(
+--         function(group)
+--             local name = group:GetName()
+--             for i=tier+1, MAX_GARRISON_GROUPS_IN_CATEGORY do
+--                 if (name.startswith(name.." "..i)) then
+--                     group:Destroy()
+--                     break
+--                 end
+--             end
+--         end
+--     )
+-- end
+
 --Spawns units to defend an airbase or FARP
 --Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
 ---@param ab AIRBASE target airbase
@@ -461,14 +476,14 @@ end
 ---@param isFrontline boolean? If true, base will be considered as fro
 function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     HC:T("Setting up base defense for "..ab:GetName())      
-
+    local airbaseName = ab:GetName()
     local side = string.upper(ab:GetCoalitionName())
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
+    local MAX_GARRISON_GROUPS_IN_CATEGORY = 5 --probably won't go higher
     if (isFrontline == nil) then
         isFrontline = HC:IsFrontlineAirbase(ab)
     end
-
 
     -- Base defense garrison based on airbase HP
     local garrison = {
@@ -492,26 +507,46 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
     end
 
-     HC:CheckFreeSpawnZones(ab:GetName())
+    HC:T(string.format("Garrison for %s BASE: %d SHORAD: %d SAM: %d EWR: %d", airbaseName, garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR))
+    --destroy all damaged groups
+    -- local groupsOnBase = SET_GROUP:New():FilterZones({ab.AirbaseZone}, false)FilterPrefixes(string.format("%s|| D ", airbaseName)):FilterOnce()
+    -- groupsOnBase:ForEachGroup(
+    --     function(group)
+    --         HC:DestroyGroupIfDamaged(group)
+    --     end
+    -- )
 
-    HC:T(string.format("Garrison for %s BASE: %d SHORAD: %d SAM: %d EWR: %d", ab:GetName(), garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR))
+    -- --destroy all garrison groups which have higher tier, leftovers from time when base was at higher HP
+    -- local prefix = string.format("%s|| D BASE ", airbaseName)
+    -- HC:DestroyGarrisonUnitsAboveTier(ab.AirbaseZone, prefix, garrison.BASE)
+    -- prefix = string.format("%s|| D SHORAD ", airbaseName)
+    -- HC:DestroyGarrisonUnitsAboveTier(ab.AirbaseZone, prefix, garrison.SHORAD)
+    -- prefix = string.format("%s|| D SAM ", airbaseName)
+    -- HC:DestroyGarrisonUnitsAboveTier(ab.AirbaseZone, prefix, garrison.SAM)
+    -- prefix = string.format("%s|| D %s EWR %d", airbaseName, side, i)
+    -- HC:DestroyGarrisonUnitsAboveTier(ab.AirbaseZone, prefix, garrison.EWR)
+
+    --going for brute but foolproof solution
+    local groupsOnBase = SET_GROUP:New():FilterZones({ab.AirbaseZone}, false):FilterPrefixes(string.format("%s|| D ", airbaseName)):FilterOnce()
+    groupsOnBase:ForEachGroup(
+        function(group)
+            group:Destroy()
+        end
+    )
+
+    local childZonesSet = HC:CheckFreeSpawnZones(airbaseName)
+
     --Add a security detachment to base
     --find a random zone inside airbase zone and spawn base defense
-    local childZonesSet = HC:GetChildZoneSet(ab.AirbaseZone, true)
     for i=1, garrison.BASE do
+        local unitAlias = string.format("%s|| D BASE %d", ab:GetName(), i)
         local randomZone = childZonesSet:GetRandomZone(10)
         if (not randomZone) then
             HC:W(string.format("[%s] Couldn't find child spawn zone for BASE GARRISON", ab:GetName()))
             break
-        end
-        local unitAlias = string.format("%s|| D SECURITY %d", ab:GetName(), i)
+        end            
         local spawn = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
-        :OnSpawnGroup(
-            function(grp)
-                HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-            end
-        )
-        :InitRandomizeTemplate(templates.BASE_SECURITY)
+            :InitRandomizeTemplate(templates.BASE_SECURITY)
         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
         childZonesSet:RemoveZonesByName(randomZone:GetName())
         HC.OccupiedSpawnZones[randomZone:GetName()] = true
@@ -519,12 +554,13 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     end
 
     for i=1, garrison.SHORAD do
+        local unitAlias = string.format("%s|| D SHORAD %d", ab:GetName(), i)
         local randomZone = childZonesSet:GetRandomZone(10)
         if (not randomZone) then
             HC:W(string.format("[%s] Couldn't find child spawn zone for SHORAD", ab:GetName()))
             break
         end
-        local unitAlias = string.format("%s|| D SHORAD %d", ab:GetName(), i)
+        
         local spawn = SPAWN:NewWithAlias(templates.SHORAD[1], unitAlias)
         :OnSpawnGroup(
             function(grp)
@@ -565,7 +601,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", ab:GetName()))
             break
         end
-        local unitAlias = string.format("%s|| %s EWR %d", ab:GetName(), side, i)
+        local unitAlias = string.format("%s|| D %s EWR %d", ab:GetName(), side, i)
         local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
         :OnSpawnGroup(
             function(grp)

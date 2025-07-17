@@ -16,6 +16,26 @@ function HC:E(message)
     env.error("[HaveChips] "..message)
 end
 
+function string:startswith(start)
+    return self:sub(1, #start) == start
+end
+
+function string:endswith(ending)
+    return ending == "" or self:sub(-#ending) == ending
+end
+
+--If group is present and is damaged, function will destroy it
+---@param alias GROUP Group
+function HC:DestroyGroupIfDamaged(group)    
+    if(group) then
+        --Group already exists
+        if (group:GetInitialSize() ~= group:GetSize()) then
+            --group was damaged, we will replace it with a new one
+            group:Destroy()
+        end
+    end
+end
+
 --Returns a list of zones which are inside specified "parent" zone
 --Function is used to find pre-determined spawn locations around base perimeter
 ---@param parent ZONE Parent zone
@@ -93,18 +113,31 @@ function HC:IsFrontlineAirbase(airbase)
     return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000)
 end
 
---goes through all airbase (specified by airbase name) spawn zones on marked as occupied and checks if they are empty
+--goes through all airbase spawn zones and checks if they are empty
 --if the zone is empty, remove it from OccupiedZones list 
 ---@param airbaseName string Airbase name
+---@return SET_ZONE #Set of zones which should be safe to spawn in
 function HC:CheckFreeSpawnZones(airbaseName)
     local zone = ZONE:FindByName(airbaseName)
     local childZones =  HC:GetChildZoneSet(zone, false)
+    local safeSpawnZones = SET_ZONE:New()
     childZones:ForEachZone(
         function(spawnZone)
-            spawnZone:Scan({Object.Category.UNIT, Object.Category.STATIC},{Unit.Category.GROUND_UNIT, Unit.Category.STRUCTURE})
-            HC.OccupiedSpawnZones[spawnZone:GetName()] = not spawnZone:IsNoneInZone()
+            if(airbaseName ~= spawnZone:GetName() or string.sub(zone:GetName(), 1,9) ~= "Warehouse") then
+                if (not HC.OccupiedSpawnZones[zone:GetName()]) then
+                    safeSpawnZones:AddZone(spawnZone)
+                else
+                    spawnZone:Scan({Object.Category.UNIT, Object.Category.STATIC},{Unit.Category.GROUND_UNIT, Unit.Category.STRUCTURE})
+                    local isEmpty = spawnZone:IsNoneInZone()
+                    HC.OccupiedSpawnZones[spawnZone:GetName()] = not isEmpty
+                    if(isEmpty) then
+                        safeSpawnZones:AddZone(spawnZone)
+                    end                    
+                end
+            end
         end
     )
+    return safeSpawnZones
 end    
 
 --Checks if file specified by filename path exists
