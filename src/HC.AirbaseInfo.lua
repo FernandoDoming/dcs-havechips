@@ -21,6 +21,15 @@ function AIRBASEINFO:GetTable()
     }
 end
 
+--Sets the HP value and redraws label if necessary
+---@param hp number HP amount
+function AIRBASEINFO:SetHP(hp)
+    if (self.HP ~= hp) then
+        self.HP = hp
+        self:DrawLabel()
+    end
+end
+
 -- Draws airbase or FARP label on F10 map
 function AIRBASEINFO:DrawLabel()
     local BLUE_COLOR_FARP = {0.2,0.2,1}

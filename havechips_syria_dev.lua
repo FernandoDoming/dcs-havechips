@@ -11,6 +11,9 @@ dofile(lfs.writedir().."Missions/havechips/src/HC.Utils.lua")
 env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HC.Builders.lua")
 dofile(lfs.writedir().."Missions/havechips/src/HC.Builders.lua")
 
+env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HC.AI.lua")
+dofile(lfs.writedir().."Missions/havechips/src/HC.AI.lua")
+
 env.info("Loading script "..lfs.writedir().."Missions/havechips/src/HC.EventHandlers.lua")
 dofile(lfs.writedir().."Missions/havechips/src/HC.EventHandlers.lua")
 

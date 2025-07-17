@@ -1,12 +1,13 @@
 --#region ------------------- Timer events -------------------
 function HC:OnBaseRepairTick()
+HC:E("BASE REPAIR TICK START")
     for name, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(name)
         abi.Coalition = ab:GetCoalition()
         abi:DrawLabel()
         HC:SetupAirbaseDefense(ab, abi.HP, nil)
     end
-
+HC:E("BASE REPAIR TICK END")
 end
 
 function HC:OnLongTick()
