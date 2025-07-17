@@ -525,8 +525,8 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     --at this point we destroyed all damaged groups, 
     -- aliveGarrisonGroups is the structure containing all ALIVE units on base
     -- groupsOnBase is the structure containing all groups on base regardless of status
-    HC:T(string.format("[%s] Garrison \nREQUIRED BASE: %d SHORAD: %d SAM: %d EWR: %d\nCURRENT  BASE: %d SHORAD: %d SAM: %d EWR: %d, total alive units: %d", 
-    airbaseName, garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR,  
+    HC:T(string.format("[%s] Garrison [HP=%d]\nREQUIRED BASE: %d SHORAD: %d SAM: %d EWR: %d\nCURRENT  BASE: %d SHORAD: %d SAM: %d EWR: %d, total alive units: %d", 
+    airbaseName, hp, garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR,  
     TCount(aliveGarrisonGroups.BASE), 
     TCount(aliveGarrisonGroups.SHORAD), 
     TCount(aliveGarrisonGroups.SAM), 
@@ -565,7 +565,9 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:T(string.format("List of %s to destroy:", category))
             for name, groupToDestroy in pairs(aliveT) do
                     if (destrCount < alive - desired) then
-                        table.insert(garrisonGroupsToDestroy, groupToDestroy) 
+                        table.insert(garrisonGroupsToDestroy, groupToDestroy)                        
+                        --remove them from aliveGarrison units as we will destroy them
+                        aliveGarrisonGroups[category][name] = nil
                         HC:T(groupToDestroy:GetName())
                     else
                         break
@@ -592,18 +594,18 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     
 
     --we need to recalculate alive groups because we might have destroyed some
-    if (destroyedGroupsCount > 0) then
-        HC:T("Checking aliveGarrisonGroups after destroying surplus")
-        for category, groups in pairs(aliveGarrisonGroups) do
-            for name, group in pairs(groups) do
-                HC:W("Checking "..name)
-                if (not group:IsAlive()) then
-                    HC:W("Removed unit which is no longer alive")
-                    aliveGarrisonGroups[category][name] = nil
-                end
-            end
-        end
-    end
+    -- if (destroyedGroupsCount > 0) then
+    --     HC:T("Checking aliveGarrisonGroups after destroying surplus")
+    --     for category, groups in pairs(aliveGarrisonGroups) do
+    --         for name, group in pairs(groups) do
+    --             HC:W("Checking "..name)
+    --             if (not group:IsAlive()) then
+    --                 HC:W("Removed unit which is no longer alive")
+    --                 aliveGarrisonGroups[category][name] = nil
+    --             end
+    --         end
+    --     end
+    -- end
 
 
 
