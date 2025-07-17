@@ -553,7 +553,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
 
     local garrisonGroupsToDestroy = {}
 
-    --make a categorized list of groups we need to destroy
+    --          make a categorized list of groups we need to destroy
     for category, garCategoryGroups in pairs(aliveGarrisonGroups) do
         local aliveT = aliveGarrisonGroups[category]
         local alive = TCount(aliveGarrisonGroups[category])
@@ -576,13 +576,36 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
             HC:T(string.format("Garrison deficit of %s %d/%d", category, alive, desired))
         end
     end
+    --------------------------------------------------------------------------------------
+
+    --                          Destroy surplus groups
     HC:T(string.format("[%s] Destroying surplus groups", airbaseName))
+    local destroyedGroupsCount = 0
     for _, g in pairs(garrisonGroupsToDestroy) do
-        HC:T(string.format("[%s] %s destroyed", airbaseName, g:GetName()))
+        HC:T(string.format("[%s] %s destroy", airbaseName, g:GetName()))
         g:Destroy()
-        HC:T(string.format("[%s] %s destroyed", airbaseName, g:GetName()))
+        HC:T(string.format("[%s] %s destroy DONE", airbaseName, g:GetName()))
+        destroyedGroupsCount = destroyedGroupsCount + 1
     end
     HC:T(string.format("[%s] Destroying surplus groups DONE", airbaseName))
+    ----------------------------------------------------------------------------------------
+    
+
+    --we need to recalculate alive groups because we might have destroyed some
+    if (destroyedGroupsCount > 0) then
+        HC:T("Checking aliveGarrisonGroups after destroying surplus")
+        for category, groups in pairs(aliveGarrisonGroups) do
+            for name, group in pairs(groups) do
+                HC:W("Checking "..name)
+                if (not group:IsAlive()) then
+                    HC:W("Removed unit which is no longer alive")
+                    aliveGarrisonGroups[category][name] = nil
+                end
+            end
+        end
+    end
+
+
 
     --now that we cleared extras and know what to add, calculate which spawn zones are available
     local childZonesSet = HC:CheckFreeSpawnZones(airbaseName)
@@ -596,7 +619,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     local function unitExists(prefix, list)
         for k, _ in pairs(list) do
             if (k:startswith(prefix)) then
-                HC:W(string.format("Group foun in alive in list, prefix: %s alive: %s", prefix, k))
+                HC:W(string.format("Group in alive garrison units, prefix: %s alive: %s", prefix, k))
                 return true
             end
         end
