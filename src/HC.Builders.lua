@@ -475,39 +475,16 @@ end
 ---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
 ---@param isFrontline boolean? If true, base will be considered as fro
 function HC:SetupAirbaseDefense(ab, hp, isFrontline)
+    local MAX_GARRISON_GROUPS_IN_CATEGORY = 5 --should be enough
     local airbaseName = ab:GetName()
-    HC:T("Setting up base defense for "..airbaseName)      
-
+    HC:T(string.format("[%s] Setting up base defense",airbaseName))
     local side = string.upper(ab:GetCoalitionName())
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
-    local MAX_GARRISON_GROUPS_IN_CATEGORY = 5 --probably won't go higher
-    -- if (isFrontline == nil) then
-    --     isFrontline = HC:IsFrontlineAirbase(ab)
-    -- end
 
     -- Airbase defense garrison group numbers based on airbase HP
-    local garrison = {
-        BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
-        SHORAD = 0, -- short range air defense groups from <SIDE>_SHORAD_TEMPLATES
-        SAM = 0, -- SAM batteries from <SIDE>_SAM_TEMPLATES
-        EWR = 0 --Early warning radars
-    }
-
-    if (hp <= 20) then
-        garrison = { BASE = 1, SHORAD = 0, SAM = 0, EWR = 0 }
-    elseif (hp > 20 and hp <= 40) then
-        garrison = { BASE = 1, SHORAD = 1, SAM = 0, EWR = 0 }
-    elseif (hp > 40 and hp <= 60) then        
-        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
-    elseif (hp > 60 and hp <= 80) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
-    elseif (hp > 80 and hp <= 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
-    elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
-    end
-
+    local garrison = AIRBASEINFO:GetGarrisonForHP(hp)
+    -- Garrison group prefixes
     local garissonPrefixes = {
         BASE = string.format("%s|| D BASE ", airbaseName),
         SHORAD = string.format("%s|| D SHORAD ", airbaseName),
@@ -515,145 +492,258 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         EWR = string.format("%s|| D %s EWR ", airbaseName, side),
     }
 
-    HC:T(string.format("Garrison REQUIRED for %s BASE: %d SHORAD: %d SAM: %d EWR: %d", airbaseName, garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR))
+    
+
     local groupsOnBase = SET_GROUP:New():FilterPrefixes(string.format("%s|| D ", airbaseName)):FilterOnce()
-    --this is the current state of defences, we will use that to determine if there are some groups we need to add or remove since deleting all seems very "expensive"
-    local currentGarrisonGroups = { BASE = {}, SHORAD = {}, SAM = {}, EWR = {} }
-    local totalGroupsCount = 0
+    --this is the current state of defences, we will use that to determine if there are some groups we need to re)spawn) or destroy
+    local aliveGarrisonGroups = { BASE = {C}, SHORAD = {}, SAM = {}, EWR = {} }
+    local totalAlive = 0
+    --categorize defense garrison groups found
     groupsOnBase:ForEachGroup(    
         function(group)
-            totalGroupsCount = totalGroupsCount + 1
-            local wasDestroyed = HC:DestroyGroupIfDamaged(group)
-            if (not wasDestroyed) then
-                local name = group:GetName()
+            --HC:T("-- *** --"..group:GetName())
+            local name = group:GetName()
+            if (not HC:DestroyGroupIfDamaged(group)) then
                 if (name:startswith(garissonPrefixes.BASE) and group:IsAlive()) then
-                    table.insert(currentGarrisonGroups.BASE,group)
+                    aliveGarrisonGroups.BASE[name] = group
+                    totalAlive = totalAlive + 1
                 elseif (name:startswith(garissonPrefixes.SHORAD) and group:IsAlive()) then
-                    table.insert(currentGarrisonGroups.SHORAD,group)
+                    aliveGarrisonGroups.SHORAD[name] = group
+                    totalAlive = totalAlive + 1
                 elseif (name:startswith(garissonPrefixes.SAM) and group:IsAlive()) then
-                    table.insert(currentGarrisonGroups.SAM,group)
+                    aliveGarrisonGroups.SAM[name] = group
+                    totalAlive = totalAlive + 1
                 elseif (name:startswith(garissonPrefixes.EWR) and group:IsAlive()) then
-                    table.insert(currentGarrisonGroups.EWR,group)
-                end
-            end            
+                    aliveGarrisonGroups.EWR[name] = group
+                    totalAlive = totalAlive + 1
+                end                
+            else
+                HC:W(string.format("[%s] Destroyed damaged group [%s]", airbaseName, name))
+            end
         end
     )
-    --at this point we destroyed all damaged groups, currentGarrisonGroups is the structure containing groups that remained
-    HC:T(string.format("Garrison CURRENT for %s BASE: %d SHORAD: %d SAM: %d EWR: %d, total units: %d", airbaseName, 
-    #currentGarrisonGroups.BASE, 
-    #currentGarrisonGroups.SHORAD, 
-    #currentGarrisonGroups.SAM, 
-    #currentGarrisonGroups.EWR,
-    totalGroupsCount))
+    --at this point we destroyed all damaged groups, 
+    -- aliveGarrisonGroups is the structure containing all ALIVE units on base
+    -- groupsOnBase is the structure containing all groups on base regardless of status
+    HC:T(string.format("[%s] Garrison \nREQUIRED BASE: %d SHORAD: %d SAM: %d EWR: %d\nCURRENT  BASE: %d SHORAD: %d SAM: %d EWR: %d, total alive units: %d", 
+    airbaseName, garrison.BASE, garrison.SHORAD, garrison.SAM, garrison.EWR,  
+    TCount(aliveGarrisonGroups.BASE), 
+    TCount(aliveGarrisonGroups.SHORAD), 
+    TCount(aliveGarrisonGroups.SAM), 
+    TCount(aliveGarrisonGroups.EWR),
+    totalAlive)
+    )
 
-    local garrisonGroupsToAdd = { BASE = 0, SHORAD = 0, SAM = 0, EWR = 0 }
+    --early chance to return if we have required garrison units
+    local function isGarissonOK()
+        local result = true
+        for category,required in pairs(garrison) do
+            local current = TCount(aliveGarrisonGroups[category])
+            if (current ~= required) then
+                return false
+            end
+        end
+        return result
+    end
+
+    if(isGarissonOK()) then
+        HC:T("GARISSON OK")
+        return
+    end
+
     local garrisonGroupsToDestroy = {}
 
-    --destroy garrison units we have too many of based on our calculated garrison composition
-    for garCategoryName, garCategoryGroups in pairs(currentGarrisonGroups) do
-        if(#garCategoryGroups > garrison[garCategoryName]) then
-            HC:T(string.format("Garrison needs to shrink, We have too many of %s %d/%d", garCategoryName, #garCategoryGroups, garrison[garCategoryName]))
-            for i=garrison[garCategoryName], #garCategoryGroups do                
-                table.insert(garrisonGroupsToDestroy, garCategoryGroups[i])
+    --make a categorized list of groups we need to destroy
+    for category, garCategoryGroups in pairs(aliveGarrisonGroups) do
+        local aliveT = aliveGarrisonGroups[category]
+        local alive = TCount(aliveGarrisonGroups[category])
+        local desired = garrison[category]
+
+        if(alive > desired) then
+            HC:T(string.format("Garrison surplus of %s %d/%d", category, alive, desired))
+            local destrCount = 0
+            HC:T(string.format("List of %s to destroy:", category))
+            for name, groupToDestroy in pairs(aliveT) do
+                    if (destrCount < alive - desired) then
+                        table.insert(garrisonGroupsToDestroy, groupToDestroy) 
+                        HC:T(groupToDestroy:GetName())
+                    else
+                        break
+                    end
+                    destrCount = destrCount + 1                    
             end
-        elseif (#garCategoryGroups < garrison[garCategoryName]) then
-            garrisonGroupsToAdd[garCategoryName] = garrison[garCategoryName] - #garCategoryGroups
-            HC:T(string.format("Garrison needs to expand, We have too few of %s %d/%d", garCategoryName, #garCategoryGroups, garrison[garCategoryName]))
-        else
-            HC:T(string.format("We have correct amount of %s",  garCategoryName))
+        elseif (alive < desired) then
+            HC:T(string.format("Garrison deficit of %s %d/%d", category, alive, desired))
         end
     end
-    HC:T("Destroying extra garrison groups "..airbaseName)
+    HC:T(string.format("[%s] Destroying surplus groups", airbaseName))
     for _, g in pairs(garrisonGroupsToDestroy) do
-        HC:T("Destroying group "..g:GetName())
+        HC:T(string.format("[%s] %s destroyed", airbaseName, g:GetName()))
         g:Destroy()
+        HC:T(string.format("[%s] %s destroyed", airbaseName, g:GetName()))
     end
-    HC:T("Destroyed extra garrison groups "..airbaseName)
+    HC:T(string.format("[%s] Destroying surplus groups DONE", airbaseName))
+
     --now that we cleared extras and know what to add, calculate which spawn zones are available
     local childZonesSet = HC:CheckFreeSpawnZones(airbaseName)
-    HC:T("Spawning additional garrison groups "..airbaseName)
-    --Add a security detachment to base
-    --find a random zone inside airbase zone and spawn base defense
-    for i=1, garrisonGroupsToAdd.BASE do
-        local unitAlias = string.format("%s%d", garissonPrefixes.BASE, i)
-        local randomZone = childZonesSet:GetRandomZone(10)
-        if (not randomZone) then
-            HC:W(string.format("[%s] Couldn't find child spawn zone for BASE GARRISON", airbaseName))
-            break
-        end            
-        local spawn = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
-            :OnSpawnGroup(
-                function(grp)
-                    HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), airbaseName, randomZone:GetName()))
-                end
-            )
-            :InitRandomizeTemplate(templates.BASE_SECURITY)
-        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
-        childZonesSet:RemoveZonesByName(randomZone:GetName())
-        HC.OccupiedSpawnZones[randomZone:GetName()] = true
-        chief:AddAgent(group)
+    HC:T(string.format("[%s] Available spawn zones:", airbaseName))
+    childZonesSet:ForEachZone(function(z)
+        HC:T(string.format("[%s] %s", airbaseName, z:GetName()))
+    end)
+    HC:T(string.format("[%s] Spawning defense groups", airbaseName))
+
+    --utility function to find a group with prefix in table
+    local function unitExists(prefix, list)
+        for k, _ in pairs(list) do
+            if (k:startswith(prefix)) then
+                HC:W(string.format("Group foun in alive in list, prefix: %s alive: %s", prefix, k))
+                return true
+            end
+        end
+        return false
     end
 
-    for i=1, garrisonGroupsToAdd.SHORAD do
-        local unitAlias = string.format("%s%d", garissonPrefixes.SHORAD, i)
-        local randomZone = childZonesSet:GetRandomZone(10)
-        if (not randomZone) then
-            HC:W(string.format("[%s] Couldn't find child spawn zone for SHORAD", airbaseName))
-            break
-        end
-        
-        local spawn = SPAWN:NewWithAlias(templates.SHORAD[1], unitAlias)
-            :OnSpawnGroup(
-                function(grp)
-                    HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), airbaseName, randomZone:GetName()))
+    --keep spawning groups until we have the desired quantity
+    local function spawnAsRequired(categoryName, templates)
+        categoryName = string.upper(categoryName)
+        local spawnedGroups = {}
+        local prefix = garissonPrefixes[categoryName]
+        local currentNum = TCount(aliveGarrisonGroups[categoryName])
+        for i=1, MAX_GARRISON_GROUPS_IN_CATEGORY do
+            HC:T(string.format("%s current: %d desired: %d", categoryName, currentNum, garrison[categoryName]))            
+            if (currentNum == garrison[categoryName]) then break end --exit when we have sufficient number of units
+            local unitAlias = string.format("%s%d", prefix, i)
+            if (not unitExists(unitAlias, aliveGarrisonGroups[categoryName])) then
+                --alive group doesn't exist with that prefix, we need to (re)spawn it
+                local randomZone = childZonesSet:GetRandomZone(10)
+                if (not randomZone) then --nowhere to spawn
+                    HC:W(string.format("[%s] Couldn't find child spawn zone for %s", airbaseName, categoryName))
+                    break
                 end
-            )
-            :InitRandomizeTemplate(templates.SHORAD)
-        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
-        childZonesSet:RemoveZonesByName(randomZone:GetName())
-        HC.OccupiedSpawnZones[randomZone:GetName()] = true
-        chief:AddAgent(group)
+                local spawn = SPAWN:NewWithAlias(templates[1], unitAlias)
+                                    :OnSpawnGroup(
+                                        function(grp)
+                                            HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), airbaseName, randomZone:GetName()))
+                                        end
+                                    )
+                                    :InitRandomizeTemplate(templates)
+                HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, unitAlias,  randomZone:GetName()))
+                local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+                childZonesSet:RemoveZonesByName(randomZone:GetName())
+                HC.OccupiedSpawnZones[randomZone:GetName()] = true
+                chief:AddAgent(group)
+                currentNum = currentNum +1
+            end            
+        end
+        return spawnedGroups
     end
+    
+    local gBASE = spawnAsRequired("BASE", templates.BASE_SECURITY)
+    local gSHORAD = spawnAsRequired("SHORAD", templates.SHORAD)
+    local gSAM = spawnAsRequired("SAM", templates.SAM)
+    local gEWR = spawnAsRequired("EWR", templates.EWR)
 
-    for i=1, garrisonGroupsToAdd.SAM do
-        local randomZone = childZonesSet:GetRandomZone(10)
-        if (not randomZone) then
-            HC:W(string.format("[%s] Couldn't find child spawn zone for SAM", airbaseName))
-            break
-        end
-        local unitAlias = string.format("%s%d", garissonPrefixes.SAM, i)
-        local spawn = SPAWN:NewWithAlias(templates.SAM[1], unitAlias)
-            :OnSpawnGroup(
-                function(grp)
-                    HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), airbaseName, randomZone:GetName()))
-                end
-            )
-            :InitRandomizeTemplate(templates.SAM)
-        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
-        childZonesSet:RemoveZonesByName(randomZone:GetName())
-        HC.OccupiedSpawnZones[randomZone:GetName()] = true
-        chief:AddAgent(group)
-    end
+    -- local currentNum = TCount(aliveGarrisonGroups.BASE) --number of currently alive units in category
+    -- for i=1, MAX_GARRISON_GROUPS_IN_CATEGORY do --looks weird I know, but I do not want a while true break kind of loop...
+    --     HC:T(i)
+    --     HC:T(string.format("BASE current: %d desired: %d", currentNum, garrison.SAM))
+    --     if (currentNum == garrison.BASE) then break end
+    --     local unitAlias = string.format("%s%d", garissonPrefixes.BASE, i)
+    --     if (not unitExists(unitAlias, aliveGarrisonGroups.BASE)) then
+    --         local randomZone = childZonesSet:GetRandomZone(10)
+    --         if (not randomZone) then
+    --             HC:W(string.format("[%s] Couldn't find child spawn zone for BASE GARRISON", airbaseName))
+    --             break
+    --         end            
+    --         local spawn = SPAWN:NewWithAlias(templates.BASE_SECURITY[1], unitAlias)
+    --             :OnSpawnGroup(
+    --                 function(grp)
+    --                     HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), airbaseName, randomZone:GetName()))
+    --                 end
+    --             )
+    --             :InitRandomizeTemplate(templates.BASE_SECURITY)
+    --         HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, grp:GetName(),  randomZone:GetName()))
+    --         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+    --         childZonesSet:RemoveZonesByName(randomZone:GetName())
+    --         HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    --         chief:AddAgent(group)
+    --         currentNum = currentNum +1
+    --     end
+    -- end
 
-    for i=1, garrisonGroupsToAdd.EWR do
-        local randomZone = childZonesSet:GetRandomZone(10)
-        if (not randomZone) then
-            HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", airbaseName))
-            break
-        end
-        local unitAlias = string.format("%s%d", garissonPrefixes.EWR, i)
-        local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
-            :OnSpawnGroup(
-                function(grp)
-                    HC:T(string.format("Spawned %s at [%s] [%s]", grp:GetName(), ab:GetName(), randomZone:GetName()))
-                end
-            )
-            :InitRandomizeTemplate(templates.EWR)
-        local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
-        childZonesSet:RemoveZonesByName(randomZone:GetName())
-        HC.OccupiedSpawnZones[randomZone:GetName()] = true
-        chief:AddAgent(group)
-    end 
+    -- currentNum = TCount(aliveGarrisonGroups.SHORAD)
+    -- for i=1, MAX_GARRISON_GROUPS_IN_CATEGORY do
+    --             HC:T(i)
+    --     HC:T(string.format("SHORAD current: %d desired: %d", currentNum, garrison.SHORAD))
+    --     if (currentNum == garrison.BASE) then break end
+    --     local unitAlias = string.format("%s%d", garissonPrefixes.SHORAD, i)
+    --     if (not unitExists(unitAlias, aliveGarrisonGroups.SHORAD)) then
+    --         local randomZone = childZonesSet:GetRandomZone(10)
+    --         if (not randomZone) then
+    --             HC:W(string.format("[%s] Couldn't find child spawn zone for SHORAD", airbaseName))
+    --             break
+    --         end
+            
+    --         local spawn = SPAWN:NewWithAlias(templates.SHORAD[1], unitAlias)
+    --             :InitRandomizeTemplate(templates.SHORAD)
+    --         HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, grp:GetName(),  randomZone:GetName()))
+    --         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+    --         childZonesSet:RemoveZonesByName(randomZone:GetName())
+    --         HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    --         chief:AddAgent(group)
+    --         currentNum = currentNum +1
+    --     end
+    -- end
+
+    -- currentNum = TCount(aliveGarrisonGroups.SAM)
+    -- for i=1, MAX_GARRISON_GROUPS_IN_CATEGORY do
+    --             HC:T(i)
+    --     HC:T(string.format("SAM current: %d desired: %d", currentNum, garrison.SAM))
+    --     if (currentNum == garrison.BASE) then 
+    --         break                 
+    --     end
+    --     local unitAlias = string.format("%s%d", garissonPrefixes.SAM, i)
+    --     if (not unitExists(unitAlias, aliveGarrisonGroups.SAM)) then
+    --         local randomZone = childZonesSet:GetRandomZone(10)
+    --         if (not randomZone) then
+    --             HC:W(string.format("[%s] Couldn't find child spawn zone for SAM", airbaseName))
+    --             break
+    --         end
+
+    --         local spawn = SPAWN:NewWithAlias(templates.SAM[1], unitAlias)
+    --             :InitRandomizeTemplate(templates.SAM)
+    --         HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, grp:GetName(),  randomZone:GetName()))
+    --         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+    --         childZonesSet:RemoveZonesByName(randomZone:GetName())
+    --         HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    --         chief:AddAgent(group)
+    --         currentNum = currentNum +1
+    --     end
+    -- end
+
+    -- currentNum = TCount(aliveGarrisonGroups.EWR)
+    -- for i=1, MAX_GARRISON_GROUPS_IN_CATEGORY do
+    --             HC:T(i)
+    --     HC:T(string.format("EWR current: %d desired: %d", currentNum, garrison.EWR))
+    --     if (currentNum == garrison.BASE) then break end
+    --     local unitAlias = string.format("%s%d", garissonPrefixes.EWR, i)
+    --     if (not unitExists(unitAlias, aliveGarrisonGroups.EWR)) then
+    --         local randomZone = childZonesSet:GetRandomZone(10)
+    --         if (not randomZone) then
+    --             HC:W(string.format("[%s] Couldn't find child spawn zone for EWR", airbaseName))
+    --             break
+    --         end
+
+    --         local spawn = SPAWN:NewWithAlias(templates.EWR[1], unitAlias)
+    --             :InitRandomizeTemplate(templates.EWR)
+    --         HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, grp:GetName(),  randomZone:GetName()))
+    --         local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+    --         childZonesSet:RemoveZonesByName(randomZone:GetName())
+    --         HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    --         chief:AddAgent(group)
+    --         currentNum = currentNum +1
+    --     end
+    -- end 
     HC:T("Garrison ops complete "..airbaseName)
 end
 

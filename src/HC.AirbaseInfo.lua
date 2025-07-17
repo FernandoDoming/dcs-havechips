@@ -211,4 +211,37 @@ function AIRBASEINFO.ApplyAirbaseUnitLossPenalty(airbaseName, unit)
     HC:AirbaseResupply(airbaseName, - damage)
 end
 
+--Calculates garrison table for airbase
+---@return table #Garrison table
+function AIRBASEINFO:GetGarrison()
+    return AIRBASEINFO:GetGarrisonForHP(self.HP)
+end
+
+--Calculates garrison table for given HP value
+---@param hp number HP value
+---@return table #Garrison table
+function AIRBASEINFO:GetGarrisonForHP(hp)
+    local garrison = {
+        BASE = 1, -- basic security detachment, mix of armor and AAA from <SIDE>_BASE_SECURITY_TEMPLATES
+        SHORAD = 0, -- short range air defense groups from <SIDE>_SHORAD_TEMPLATES
+        SAM = 0, -- SAM batteries from <SIDE>_SAM_TEMPLATES
+        EWR = 0 --Early warning radars
+    }
+
+    if (hp <= 20) then
+        garrison = { BASE = 1, SHORAD = 0, SAM = 0, EWR = 0 }
+    elseif (hp > 20 and hp <= 40) then
+        garrison = { BASE = 1, SHORAD = 1, SAM = 0, EWR = 0 }
+    elseif (hp > 40 and hp <= 60) then        
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
+    elseif (hp > 60 and hp <= 80) then
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
+    elseif (hp > 80 and hp <= 90) then
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
+    elseif (hp > 90) then
+        garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
+    end
+    return garrison
+end
+
 env.info("HC.AIRBASEINFO loaded")

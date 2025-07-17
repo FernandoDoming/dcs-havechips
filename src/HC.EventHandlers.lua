@@ -26,7 +26,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventKill(e)
-    HC:W("HC.EVENT OnEventKill")
+    --HC:W("HC.EVENT OnEventKill")
     --   Unit.Category
     --   AIRPLANE      = 0,
     --   HELICOPTER    = 1,
@@ -53,7 +53,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventUnitLost(e)
-    HC:W("HC.EVENT OnEventUnitLost")
+    --HC:W("HC.EVENT OnEventUnitLost")
     if (e.IniPlayerName) then
         --Handle player OnEventDead
         return

@@ -32,6 +32,12 @@ function string:endswith(ending)
     return ending == "" or self:sub(-#ending) == ending
 end
 
+function TCount(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
 --If group is present and is damaged, function will destroy it
 ---@param alias GROUP Group
 ---@return boolean $true if group was destroyed or didn't exist
@@ -43,9 +49,12 @@ function HC:DestroyGroupIfDamaged(group)
             group:Destroy()
             return true
         end
+        if (not group:IsAlive()) then
+            return true --group was already desreoyed
+        end
         return false
     else
-        --Group didn't exist
+        --Group didn't exist anyway
         return true
     end
 end
