@@ -4,7 +4,7 @@ del %OUTFILE%
 del .\dist\Missions\havechips\*.lua
 del .\dist\Missions\havechips\*.json
 echo ------------------- MOOSE.lua ------------------- >> %OUTFILE%
-type ..\..\Scripts\MOOSE_INCLUDE\Moose_Include_Static\Moose_.lua >> %OUTFILE%
+type .\lib\Moose_.lua >> %OUTFILE%
 echo ------------------- SPLASH DAMAGE ------------------- >> %OUTFILE%
 type .\lib\Splash_Damage_3.3.lua >> %OUTFILE%
 echo ------------------- EWRS.lua ------------------- >> %OUTFILE%
