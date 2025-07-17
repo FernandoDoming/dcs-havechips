@@ -86,32 +86,32 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventDead(e)
-    HC:W("HC.EVENT OnEventDead")
+    --HC:W("HC.EVENT OnEventDead")
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventMissionEnd(e)
-    HC:W("HC.EVENT OnEventMissionEnd")
+    --HC:W("HC.EVENT OnEventMissionEnd")
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventPilotDead(e)
-    HC:W("HC.EVENT OnEventPilotDead")
+    --HC:W("HC.EVENT OnEventPilotDead")
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventShot(e)
-    HC:W("HC.EVENT OnEventShot")
+    --HC:W("HC.EVENT OnEventShot")
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventBDA(e)
-    HC:W("HC.EVENT OnEventBDA")
+    --HC:W("HC.EVENT OnEventBDA")
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventTakeoff(e)
-    HC:W("HC.EVENT OnEventTakeoff")
+    --HC:W("HC.EVENT OnEventTakeoff")
 end
 
 ---@param e EVENTDATA Event data
@@ -121,18 +121,18 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventLandingAfterEjection(e)
-    HC:W("HC.EVENT OnEventLandingAfterEjection")
-    if (not e.IniPlayerName) then
-        --that is an AI 
-        if (e.IniDCSUnit) then
-            e.IniDCSUnit:destroy()
-        end
-    end
+    -- HC:W("HC.EVENT OnEventLandingAfterEjection")
+    -- if (not e.IniPlayerName) then
+    --     --that is an AI 
+    --     if (e.IniDCSUnit) then
+    --         e.IniDCSUnit:destroy()
+    --     end
+    -- end
 end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventLand(e)
-    HC:W("HC.EVENT OnEventLand")
+    --HC:W("HC.EVENT OnEventLand")
 end
 
 ---@param e EVENTDATA Event data

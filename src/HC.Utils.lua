@@ -1,6 +1,14 @@
 --Write trace message to log
 ---@param message string message text
 function HC:T(message)
+    if (HC.TRACE) then
+        env.info("[HaveChips] "..message)        
+    end
+end
+
+--Write info message to log
+---@param message string message text
+function HC:I(message)
     env.info("[HaveChips] "..message)
 end
 
@@ -26,13 +34,19 @@ end
 
 --If group is present and is damaged, function will destroy it
 ---@param alias GROUP Group
+---@return boolean $true if group was destroyed or didn't exist
 function HC:DestroyGroupIfDamaged(group)    
     if(group) then
         --Group already exists
         if (group:GetInitialSize() ~= group:GetSize()) then
             --group was damaged, we will replace it with a new one
             group:Destroy()
+            return true
         end
+        return false
+    else
+        --Group didn't exist
+        return true
     end
 end
 
@@ -123,17 +137,21 @@ function HC:CheckFreeSpawnZones(airbaseName)
     local safeSpawnZones = SET_ZONE:New()
     childZones:ForEachZone(
         function(spawnZone)
-            if(airbaseName ~= spawnZone:GetName() or string.sub(zone:GetName(), 1,9) ~= "Warehouse") then
-                if (not HC.OccupiedSpawnZones[zone:GetName()]) then
+            if(airbaseName ~= spawnZone:GetName() and string.sub(spawnZone:GetName(), 1,9) ~= "Warehouse") then
+                if (not HC.OccupiedSpawnZones[spawnZone:GetName()]) then
+                    --HC:T(string.format(" Safe spawn zone %s [%s]", airbaseName, spawnZone:GetName()))
                     safeSpawnZones:AddZone(spawnZone)
                 else
                     spawnZone:Scan({Object.Category.UNIT, Object.Category.STATIC},{Unit.Category.GROUND_UNIT, Unit.Category.STRUCTURE})
                     local isEmpty = spawnZone:IsNoneInZone()
                     HC.OccupiedSpawnZones[spawnZone:GetName()] = not isEmpty
                     if(isEmpty) then
+                        --HC:T(string.format("Safe spawn zone %s [%s]", airbaseName, spawnZone:GetName()))
                         safeSpawnZones:AddZone(spawnZone)
                     end                    
                 end
+            else
+                --HC:T(string.format("%s [%s] is not a valid spawn zone", airbaseName, spawnZone:GetName()))
             end
         end
     )

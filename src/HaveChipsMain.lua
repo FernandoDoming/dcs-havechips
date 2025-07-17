@@ -1,5 +1,6 @@
 HC = {
     VERSION="0.1.2",
+    TRACE = true, --enable or disable trace messages
     RED = { 
         TEMPLATES = {},
         INVENTORY_TEMPLATES = {

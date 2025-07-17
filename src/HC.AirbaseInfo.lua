@@ -150,8 +150,8 @@ function AIRBASEINFO:DrawLabel()
     end
     if (enemyCoalition) then
         --friendlies don't get a list of enemy missions targeting the zone
-        self.MarkIdFriendly = coord:TextToAll(string.format(" FR %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
-        self.MarkIdEnemy = coord:TextToAll(string.format(" EN %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText), enemyCoalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
+        self.MarkIdFriendly = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+        self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText), enemyCoalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
     else
         --neutral
         self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
