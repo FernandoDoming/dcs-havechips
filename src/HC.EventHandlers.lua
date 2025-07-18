@@ -1,6 +1,6 @@
 --#region ------------------- Timer events -------------------
 function HC:OnBaseRepairTick()
-HC:E("BASE REPAIR TICK START")
+HC:T("BASE REPAIR TICK START")
     local delay = 0
     for name, abi in pairs(HC.ActiveAirbases) do
         local ab = AIRBASE:FindByName(name)
@@ -12,11 +12,11 @@ HC:E("BASE REPAIR TICK START")
         local mytimer = TIMER:New(HC.SetupAirbaseDefense, HC, ab, abi.HP)
         mytimer:Start(delay)
     end
-HC:E("BASE REPAIR TICK END")
+HC:T("BASE REPAIR TICK END")
 end
 
 function HC:OnBaseResupplyTick()
-HC:E("BASE RESUPPLY TICK START")
+HC:T("BASE RESUPPLY TICK START")
     local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.BASE_RESUPPLY_INTERVAL
     local delay = 0
     for _, abi in pairs(HC.ActiveAirbases) do
@@ -25,7 +25,7 @@ HC:E("BASE RESUPPLY TICK START")
         local mytimer = TIMER:New(AIRBASEINFO.AddHP, abi, abi.HP)
         mytimer:Start(delay)
     end
-HC:E("BASE RESUPPLY TICK END")
+HC:T("BASE RESUPPLY TICK END")
 end
 
 --#endregion
