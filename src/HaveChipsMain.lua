@@ -20,15 +20,16 @@ HC = {
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
     PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour,
+
     FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"},
     ActiveAirbases = {},
-    SHORT_TICK_TIMER = nil, --reference to timer
-    LONG_TICK_TIMER = nil, -- reference to timer
-    BASE_REPAIR_TIMER = nil, --reference to timer
-    SHORT_TICK_INTERVAL = 10, --short tick timer interval in seconds 
-    LONG_TICK_INTERVAL = 600, --long tick timer interval in seconds
-    BASE_REPAIR_INTERVAL = 600, --base defense units are (re)spawned in this interval based on base HP at that moment
+    TIMERS = {
+        BASE_REPAIR_TIMER = nil,
+        BASE_RESUPPLY_TIMER = nil
+        },
+    BASE_RESUPPLY_INTERVAL = 2 * 60, -- this timer triggers HP resupply to bases based on PASSIVE_RESUPPLY_RATE
+    BASE_REPAIR_INTERVAL = 10 * 60, --base defense units are (re)spawned in this interval based on base HP at that moment
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
     EventHandler = {},
     WAREHOUSE_RESPAWN_INTERVAL = 1 * 60, --interval in seconds for warehouse respawn if destroyed
@@ -79,17 +80,18 @@ function HC:Start()
         bases:ForEachAirbase(
             function(b)
                 local abi = AIRBASEINFO:NewFromAIRBASE(b, 100)
-                --random HP
-                abi.HP = math.random(80) + 20
+                --initial default HP
+                abi.HP = 50
                 for i=1, #wpList do
                     local zone = b.AirbaseZone
                     if (zone:IsVec2InZone(wpList[i])) then
                         abi.WPIndex = i
-                        table.insert(HC.ActiveAirbases, abi)
+                        HC.ActiveAirbases[abi.Name] = abi
                         HC:T(b:GetName().." assigned index "..tostring(i))
                         break
                     end
                 end
+                abi:DrawLabel()
             end
         )
         --save to file
@@ -104,8 +106,9 @@ function HC:Start()
         if(success) then
             HC:T("Table loaded from file "..HC.BASE_PATH..filename)
             for i=1, #data do
-                --table.insert(HC.ActiveAirbases,AIRBASEINFO:NewFromTable(data[i]))
-                HC.ActiveAirbases[data[i].Name] = AIRBASEINFO:NewFromTable(data[i])
+                local abi = AIRBASEINFO:NewFromTable(data[i])
+                HC.ActiveAirbases[data[i].Name] = abi
+                abi:DrawLabel()
             end
         else
             HC:W("Could not load table from file "..HC.BASE_PATH..filename)
@@ -159,13 +162,13 @@ function HC:Start()
     end
 
     -- Periodic calls
-    HC.SHORT_TICK_TIMER = TIMER:New(HC.OnShortTick, HC)
-    HC.SHORT_TICK_TIMER:Start(5,HC.SHORT_TICK_INTERVAL)
-    HC.LONG_TICK_TIMER = TIMER:New(HC.OnLongTick, HC)
-    HC.LONG_TICK_TIMER:Start(5,HC.LONG_TICK_INTERVAL)
-    HC.BASE_REPAIR_TIMER = TIMER:New(HC.OnBaseRepairTick, HC)
-    HC.BASE_REPAIR_TIMER:Start(HC.BASE_REPAIR_INTERVAL,HC.BASE_REPAIR_INTERVAL)
-    --BASE_REPAIR_INTERVAL
+    --rebuilds base defences based on HP at that moment
+    HC.TIMERS.BASE_REPAIR_TIMER = TIMER:New(HC.OnBaseRepairTick, HC)
+    HC.TIMERS.BASE_REPAIR_TIMER:Start(HC.BASE_REPAIR_INTERVAL,HC.BASE_REPAIR_INTERVAL)
+    --Timer which adds HP to bases
+    HC.TIMERS.BASE_RESUPPLY_TIMER = TIMER:New(HC.OnBaseResupplyTick, HC)
+    HC.TIMERS.BASE_RESUPPLY_TIMER:Start(HC.BASE_RESUPPLY_INTERVAL,HC.BASE_RESUPPLY_INTERVAL)
+
     --#region ---------- Event handlers -------------
     
     HC.EventHandler = EVENTHANDLER:New()

@@ -15,16 +15,19 @@ HC:E("BASE REPAIR TICK START")
 HC:E("BASE REPAIR TICK END")
 end
 
-function HC:OnLongTick()
-    local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.LONG_TICK_INTERVAL
-    HC:AirbaseResupplyAll(resupplyPercent)
+function HC:OnBaseResupplyTick()
+HC:E("BASE RESUPPLY TICK START")
+    local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.BASE_RESUPPLY_INTERVAL
+    local delay = 0
+    for _, abi in pairs(HC.ActiveAirbases) do
+        delay = delay + 0.5
+        abi:AddHP(resupplyPercent)
+        local mytimer = TIMER:New(AIRBASEINFO.AddHP, abi, abi.HP)
+        mytimer:Start(delay)
+    end
+HC:E("BASE RESUPPLY TICK END")
 end
 
-function HC:OnShortTick()    
-    for _, abi in pairs(HC.ActiveAirbases) do
-        abi:DrawLabel()
-    end
-end
 --#endregion
 
 --#region ------------------- DCS events -------------------

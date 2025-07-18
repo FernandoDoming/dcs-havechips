@@ -30,6 +30,21 @@ function AIRBASEINFO:SetHP(hp)
     end
 end
 
+---Resupply base with with [resupplyPercent]
+---@param resupplyPercent number #Add this number to base HP
+function AIRBASEINFO:AddHP(resupplyPercent)
+    if(self.HP + resupplyPercent > 100) then
+        self.HP = 100           
+        return
+    elseif (self.HP + resupplyPercent < 0) then
+        self.HP = 0 --maybe neutralize base/zone
+        return
+    else
+        self.HP = self.HP + resupplyPercent          
+    end 
+    self:DrawLabel()
+end
+
 -- Draws airbase or FARP label on F10 map
 function AIRBASEINFO:DrawLabel()
     local BLUE_COLOR_FARP = {0.2,0.2,1}
@@ -208,7 +223,7 @@ function AIRBASEINFO.ApplyAirbaseUnitLossPenalty(airbaseName, unit)
     end
     local damage = HC.CalculateDamageForUnitLost(unit)
     HC:T(string.format("Applying %.1f damage to %s", damage, airbaseName))
-    HC:AirbaseResupply(airbaseName, - damage)
+    HC.ActiveAirbases[airbaseName]:AddHP(- damage)
 end
 
 --Calculates garrison table for airbase
