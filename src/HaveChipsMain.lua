@@ -18,8 +18,10 @@ HC = {
     },
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
-    PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour,
-    FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
+    PASSIVE_RESUPPLY_RATE = 40,          --Base HP resupply rate per hour %/hour,
+    FRONTLINE_PROXIMITY_THRESHOLD = 80,  -- Distance in kilometers, if an airbase is closer than this from nearest
+                                         -- enemy airbase it is considered a frontline airbase
+    MAX_STRATEGIC_ZONES = 5,             -- Maximum number of strategic zones per chief
     TEMPLATE_CATEGORIES = {
         "SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", 
         "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"
@@ -33,6 +35,9 @@ HC = {
     EventHandler = {}
 
 }
+
+-- TODO set to false for production
+FORCE_INIT = true --force reinitialization of campaign, used for debugging
 
 env.info(string.format("HaveChips %s loading ", HC.VERSION))
 
@@ -53,7 +58,7 @@ function HC:Start()
 
     ----------------------------------------------------------------------------------------------------------
     --#region Initialize campaign state or load progress
-    if(not HC:FileExists(HC.BASE_PATH..filename)) then
+    if(not HC:FileExists(HC.BASE_PATH..filename) or FORCE_INIT) then
     --First mission in campaign, build a list of POIs (Airbases and FARPs) which have RED/BLUE ownership set
     --everything else will be ignored
         HC:T("Initializing campaign")
@@ -138,14 +143,10 @@ function HC:Start()
             --abi:DrawLabel()
         end
         ab:SetAutoCaptureON()
-
-        --Customize chief's response to strategic zones
-        local red_empty, red_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
-        HC.RED.CHIEF:AddStrategicZone(opsZone, nil, 2, red_occupied, red_empty)
-
-        local blue_empty, blue_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
-        HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, blue_occupied, blue_empty)
     end
+
+    HC:InitStrategy(HC.RED.CHIEF)
+    HC:InitStrategy(HC.BLUE.CHIEF)
 
     -- Periodic calls
     HC.SHORT_TICK_TIMER = TIMER:New(HC.OnShortTick, HC)

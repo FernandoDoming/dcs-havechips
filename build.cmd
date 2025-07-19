@@ -21,4 +21,6 @@ echo ------------------- HC.EventHandlers.lua ------------------- >> %OUTFILE%
 type .\src\HC.EventHandlers.lua >> %OUTFILE%
 echo ------------------- HC.Utils.lua ------------------- >> %OUTFILE%
 type .\src\HC.Utils.lua >> %OUTFILE%
+echo ------------------- HC.Chief.lua ------------------- >> %OUTFILE%
+type .\src\HC.Chief.lua >> %OUTFILE%
 copy .\airbases.json .\dist\Missions\havechips\

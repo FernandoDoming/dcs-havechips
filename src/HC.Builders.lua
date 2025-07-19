@@ -590,25 +590,24 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(10, "Total")
-    chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
+    chief:SetStrategy(CHIEF.Strategy.AGGRESSIVE)
     chief:SetTacticalOverviewOn() --for debugging
-    chief:SetVerbosity(0) --set to 5 for debugging
+    chief:SetVerbosity(2) --set to 5 for debugging
     chief:SetDetectStatics(true)
+
+    -- keep track of strategic zones
+    chief.StrategicZones = {}
+
     function chief:OnAfterZoneLost(from, event, to, opszone)
-        HC:W("Zone is now lost")
+        HC:ChiefOnZoneLost(self, from, event, to, opszone)
     end
 
     function chief:OnAfterZoneCaptured(from, event, to, opszone)
-        HC:W("Zone is now captured")
+        HC:ChiefOnZoneCaptured(self, from, event, to, opszone)
     end
 
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
-        --this eventhandler will be moved to HC main
-        HC:W("Zone is now empty")
-        local ab = AIRBASE:FindByName(opszone:GetName())
-        --zone neutralized, send troops to capture it
-        --possible scenario
-        --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
+        HC:ChiefOnZoneEmpty(self, from, event, to, opszone)
     end
     
 

@@ -91,9 +91,49 @@ function HC:IsFrontlineAirbase(airbase)
     --         env.info("Base in filtered set "..enemySide.." "..b:GetCoalitionName().." "..b:GetName())
     --     end
     -- )
-    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
+    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord)
     local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
+    HC:T("Closest enemy base to " ..airbase:GetName().. " is "..closestEnemyBase:GetName().." at distance "..tostring(dist).." m")
     return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000)
+end
+
+-- Get frontline airbases for a coalition
+---@param coalitionName string Coalition name to get frontline airbases for. Either "red" or "blue"
+---@return SET_AIRBASE #Set of frontline airbases for specified coalition
+function HC:GetFrontlineAirbases(coalitionName)
+    local frontlineAirbases = SET_AIRBASE:New()
+    local airbases = SET_AIRBASE:New():FilterCoalitions(coalitionName):FilterOnce()
+    airbases:ForEachAirbase(
+        function(ab)
+            if (HC:IsFrontlineAirbase(ab)) then
+                frontlineAirbases:AddAirbase(ab)
+            end
+        end
+    )
+    return frontlineAirbases
+end
+
+-- Get closest enemy airbase to a specified airbase
+---@param airbase AIRBASE Airbase to find closest enemy airbase for
+---@param airbaseType table? Optional 'array' of airbase types to filter by, e.g. {"helipad"}, {"airdrome", "helipad"}, etc.
+---@return AIRBASE? #Closest enemy airbase, nil if no enemy airbase found
+function HC:GetClosestEnemyAirbase(airbase, airbaseType)
+    local enemySide = nil
+    if (airbase:GetCoalition() == coalition.side.RED) then
+        enemySide = "blue"
+    elseif (airbase:GetCoalition() == coalition.side.BLUE) then
+        enemySide = "red"
+    else
+        -- Neutral airbase, no enemy side
+        return nil
+    end
+    local set = SET_AIRBASE:New():FilterCoalitions(enemySide)
+    if airbaseType then
+        set:FilterCategories(airbaseType)
+    end
+    local enemyBases = set:FilterOnce()
+    local coord = airbase:GetCoordinate()
+    return enemyBases:FindNearestAirbaseFromPointVec2(coord)
 end
 
 --Checks if file specified by filename path exists
