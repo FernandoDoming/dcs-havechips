@@ -7,7 +7,6 @@ HC:T("BASE REPAIR TICK START")
         abi.Coalition = ab:GetCoalition()
         abi:DrawLabel()
         delay = delay + 1
-        --HC:SetupAirbaseDefense(ab, abi.HP, nil)
         --stagger the execution 1s between each base repair call
         local mytimer = TIMER:New(HC.SetupAirbaseDefense, HC, ab, abi.HP)
         mytimer:Start(delay)
@@ -88,7 +87,7 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventBaseCaptured(e)
-    HC:W("HC.EVENT OnEventBaseCaptured")
+    --HC:W("HC.EVENT OnEventBaseCaptured")
     return true
 end
 
