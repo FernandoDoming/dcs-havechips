@@ -67,12 +67,17 @@ end
 ---@param chief CHIEF
 ---@return resourcesEmpty table, resourcesOccupied table Resource tables for empty zone and occupied zone scenarios
 function HC:GetChiefZoneResponse(chief)
-        local resourceOccupied, helos = chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-        --HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-        --local resourceOccupied, _ = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_TANK)
+        local resourceOccupied, armor = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        chief:AddToResource(resourceOccupied, AUFTRAG.Type.GROUNDESCORT, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+        chief:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1)
+        local assaultInf = chief:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 1)
+        chief:AddTransportToResource(assaultInf, 1, 2, GROUP.Attribute.GROUND_IFV)
+        
 
         --local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
-        local resourceEmpty, emptyIFV = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
+        chief:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
+
 
         --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
         --HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.GROUND_APC})
