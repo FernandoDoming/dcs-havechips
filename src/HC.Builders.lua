@@ -618,6 +618,9 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                 HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, unitAlias,  randomZone:GetName()))
                 group:SetProperty("airbaseName", airbaseName)
                 local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+                for _, u in pairs(group:GetUnits()) do
+                    u:SetProperty("airbaseName", airbaseName)
+                end
                 childZonesSet:RemoveZonesByName(randomZone:GetName())
                 HC.OccupiedSpawnZones[randomZone:GetName()] = true
                 chief:AddAgent(group)
