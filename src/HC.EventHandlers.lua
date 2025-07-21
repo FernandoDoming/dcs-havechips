@@ -98,7 +98,9 @@ end
 
 ---@param e EVENTDATA Event data
 function HC:OnEventMissionEnd(e)
-    --HC:W("HC.EVENT OnEventMissionEnd")
+    HC:W("HC.EVENT OnEventMissionEnd")
+    --Save current campaign state
+    HC:SaveCampaignState()
 end
 
 ---@param e EVENTDATA Event data

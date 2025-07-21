@@ -47,10 +47,6 @@ function HC:CreateChief(side, alias)
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
         --this eventhandler will be moved to HC main
         HC:W("Zone is now empty")
-        local ab = AIRBASE:FindByName(opszone:GetName())
-        --zone neutralized, send troops to capture it
-        --possible scenario
-        --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
     end
     
 

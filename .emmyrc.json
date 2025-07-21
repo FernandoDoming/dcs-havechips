@@ -10,7 +10,7 @@
     "encoding": "utf-8",
     "ignoreDir": [],
     "ignoreGlobs": [],
-    "library": ["C:\\Users\\tgudelj\\Saved Games\\DCS.openbeta\\Scripts\\MOOSE\\Moose Development\\Moose"],
+    "library": ["C:\\Users\\tgudelj\\Saved Games\\DCS.openbeta\\Scripts\\MOOSE\\Moose Development\\Moose", "..\\MOOSE\\Moose Development\\Moose"],
     "moduleMap": [],
     "preloadFileSize": 0,
     "reindexDuration": 5000,

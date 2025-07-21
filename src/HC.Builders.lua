@@ -269,9 +269,6 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         airwing = AIRWING:New(warehouse:GetName(), airwingName)
     end
 
-    -- Finda a safe spawn zone
-    local childZoneSet = HC:GetChildZoneSet(airbase.AirbaseZone, true)
-    local randomZone = airbase.AirbaseZone
     if (childZoneSet:Count() == 0) then
         HC:W(string.format("[%s] Couldn't find child spawn zone for brigade...will spawn in random place...", airbase:GetName()))          
     else
@@ -283,7 +280,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local cohortName = string.format("%s|| Infantry %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, cohortName)
+            platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, cohortName)
             platoon:SetGrouping(4)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.ONGURAD}, 70)
             -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
@@ -297,7 +294,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local cohortName = string.format("%s|| Mechanized infantry %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.MECHANIZED[i], 2, cohortName)
+            platoon = PLATOON:New(templates.MECHANIZED[i], 2, cohortName)
             platoon:SetGrouping(5)
             platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
@@ -310,7 +307,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local cohortName = string.format("%s|| Tank %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.TANK[i], 2, cohortName)
+            platoon = PLATOON:New(templates.TANK[i], 2, cohortName)
             platoon:SetGrouping(6)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
             platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
@@ -319,9 +316,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             brigade:AddPlatoon(platoon)            
         end
     end
-    --brigade:SetSpawnZone(airbase.AirbaseZone)
-    brigade:SetSpawnZone(randomZone)
-    HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    brigade.spawnzonemaxdist = 50 --spawn units max 50m from warehouse static
     brigade:SetRespawnAfterDestroyed(HC.WAREHOUSE_RESPAWN_INTERVAL) -- 10 minutes to respawn if destroyed
     chief:AddBrigade(brigade)
     

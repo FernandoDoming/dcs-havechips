@@ -230,8 +230,8 @@ function HC:SaveTable(table, filename)
     if (table == nil) then
         HC:E("Table is nil")
         return false
-    end        
-
+    end
+    
     local json = NET.Lua2Json(table)
     local f = assert(io.open(filename, "wb"))
     if (f == nil) then

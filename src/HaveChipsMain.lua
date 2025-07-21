@@ -19,8 +19,7 @@ HC = {
     },
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
-    PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour,
-
+    PASSIVE_RESUPPLY_RATE = 40, --Base HP resupply rate per hour %/hour
     FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"},
     ActiveAirbases = {},
@@ -95,7 +94,7 @@ function HC:Start()
             end
         )
         --save to file
-        HC:SaveTable(HC.ActiveAirbases, HC.BASE_PATH..filename)
+        HC:SaveCampaignState()
     else
         -- Campaign is in progress, we need to load the data
         wpGroup:Destroy() --we don't need the waypoints template group it anyway, we loaded waypoints from JSON file
@@ -169,8 +168,7 @@ function HC:Start()
     HC.TIMERS.BASE_RESUPPLY_TIMER = TIMER:New(HC.OnBaseResupplyTick, HC)
     HC.TIMERS.BASE_RESUPPLY_TIMER:Start(HC.BASE_RESUPPLY_INTERVAL,HC.BASE_RESUPPLY_INTERVAL)
 
-    --#region ---------- Event handlers -------------
-    
+    --#region ---------- Event handlers -------------   
     HC.EventHandler = EVENTHANDLER:New()
     --HC.EventHandler:HandleEvent(EVENTS.BaseCaptured, HC.OnEventBaseCaptured)
     --HC.EventHandler:HandleEvent(EVENTS.Dead, HC.OnEventDead)
@@ -189,21 +187,16 @@ function HC:Start()
 
     local blinder = TIRESIAS:New()
     -- Setup different radius for activation around helo and airplane groups (applies to AI and humans)
-     blinder:SetActivationRanges(15,30) -- defaults are 10, and 25
-     -- Setup engagement ranges for AAA (non-advanced SAM units like Flaks etc) and if you want them to be AIOff
-     blinder:SetAAARanges(60,true) -- defaults are 60, and true
-
+    blinder:SetActivationRanges(15,30) -- defaults are 10, and 25
+    -- Setup engagement ranges for AAA (non-advanced SAM units like Flaks etc) and if you want them to be AIOff
+    blinder:SetAAARanges(60,true) -- defaults are 60, and true
 
     HC.BLUE.CHIEF:__Start(1)
     HC.RED.CHIEF:__Start(1)
     HC:T("Startup completed")
 end
 
-
-
-
-
---Saves scenario state to file
+--Saves campaign state to file
 function HC:SaveCampaignState()
     local filename = HC.PERSIST_FILE_NAME
     for _, abi in pairs(HC.ActiveAirbases) do
