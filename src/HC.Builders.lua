@@ -645,10 +645,13 @@ function HC:SetupAirbaseStatics(airbaseName)
     HC:T(string.format("[%s] Setting up base statics",airbaseName))
     local side = string.upper(ab:GetCoalitionName())
     local owner = country.id.US
+    local enemySide = ""
     if (side == "BLUE") then
         owner = country.id.US
+        enemySide = "RED"
     elseif(side == "RED") then
         owner = country.id.USSR
+        enemySide = "BLUE"
     else
         HC:W(string.format("[%s] SeatupAirbaseStatics: base is neither red nor blue, skipping statics"))
         return
@@ -663,7 +666,12 @@ function HC:SetupAirbaseStatics(airbaseName)
                         s:Destroy()
                     end
                 end)
-
+    --destroy all enemy statics if any are left over after base was captured
+        SET_STATIC:New():FilterZones(airbase.AirbaseZone):FilterCoalitions({string.lower(enemySide)}):FilterOnce()
+            :ForEachStatic(
+                function(s)
+                    s:Destroy()
+                end)
     --utility function to find a static with prefix in table
     local function findStaticByPrefix(prefix, list)
         for k, v in pairs(list) do
