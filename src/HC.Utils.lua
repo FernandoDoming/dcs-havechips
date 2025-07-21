@@ -415,6 +415,19 @@ end
 ---@param unit DCSUnit DCS unit to check
 ---@return number #Damage in %
 function HC.CalculateDamageForUnitLost(unit)
+    if (unit.Category == Object.Category.STATIC) then
+        local static = STATIC:FindByName(unit:getName(), false) 
+        if(static) then
+            local damage = static:GetProperty("damageWhenLost")
+            if (damage) then
+                return damage
+            else
+                return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.STATIC
+            end
+        else 
+            return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.STATIC        
+        end  
+    end
     if (Unit.getPlayerName(unit)) then
         return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.PLAYER
     elseif (HC.IsPlane(unit)) then

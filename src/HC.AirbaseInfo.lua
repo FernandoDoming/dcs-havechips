@@ -214,7 +214,7 @@ function AIRBASEINFO:IsFrontline()
     return HC:IsFrontlineAirbase(airbase)
 end
 
---Apply damage to airbase proportional to "value" of the unit lost
+--Apply damage to airbase proportional to "value" of the unit/static lost
 ---@param airbaseName string Airbase name
 ---@unit unit DCSUnit Destroyed unit related to airbase
 function AIRBASEINFO.ApplyAirbaseUnitLossPenalty(airbaseName, unit)
@@ -257,6 +257,39 @@ function AIRBASEINFO:GetGarrisonForHP(hp)
         garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
     end
     return garrison
+end
+
+--Calculates required airbase statics
+---@return table #Statics table
+function AIRBASEINFO:GetRequiredStatics()
+    return AIRBASEINFO:GetStaticsForHP(self.HP)
+end    
+
+--Calculates statics table for given HP value
+---@param hp number HP value
+---@return table #Statics table
+function AIRBASEINFO:GetRequiredStaticsForHP(hp)
+    local statics = {
+        BARRACKS = true, -- Barracks
+        BUNKER = false, -- Fortified bunker
+        TRANSMITTER = false, -- Transmitter object
+        HQ = false -- Headquarters building
+    }
+
+    if (hp <= 20) then
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    elseif (hp > 20 and hp <= 40) then
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    elseif (hp > 40 and hp <= 60) then        
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    elseif (hp > 60 and hp <= 80) then
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    elseif (hp > 80 and hp <= 90) then
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    elseif (hp > 90) then
+        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+    end
+    return statics
 end
 
 env.info("HC.AIRBASEINFO loaded")

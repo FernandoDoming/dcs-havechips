@@ -163,11 +163,11 @@ function HC:SetupFARPSupportUnits(farp)
     FARPSupportObjects.WINDSOCK.Position = farplocation:Translate(radius + 20,farpStatic:GetHeading())
 
     local farpName = farp:GetName()
-    local spawnCountry = country.UN_PEACEKEEPERS
+    local spawnCountry = country.id.UN_PEACEKEEPERS
     if(farp:GetCoalition() == coalition.side.RED) then
-        spawnCountry = country.USSR
+        spawnCountry = country.id.USSR
     elseif (farp:GetCoalition() == coalition.side.BLUE) then
-        spawnCountry = country.US
+        spawnCountry = country.id.US
     end
 
     for k,v in pairs(FARPSupportObjects) do
@@ -476,7 +476,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
 
     local groupsOnBase = SET_GROUP:New():FilterPrefixes(string.format("%s|| D ", airbaseName)):FilterOnce()
     --this is the current state of defences, we will use that to determine if there are some groups we need to re)spawn) or destroy
-    local aliveGarrisonGroups = { BASE = {C}, SHORAD = {}, SAM = {}, EWR = {} }
+    local aliveGarrisonGroups = { BASE = {}, SHORAD = {}, SAM = {}, EWR = {} }
     local totalAlive = 0
     --categorize defense garrison groups found
     groupsOnBase:ForEachGroup(    
@@ -616,6 +616,7 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                                     )
                                     :InitRandomizeTemplate(templates)
                 HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, unitAlias,  randomZone:GetName()))
+                group:SetProperty("airbaseName", airbaseName)
                 local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
                 childZonesSet:RemoveZonesByName(randomZone:GetName())
                 HC.OccupiedSpawnZones[randomZone:GetName()] = true
@@ -631,4 +632,82 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     local gSAM = spawnAsRequired("SAM", templates.SAM)
     local gEWR = spawnAsRequired("EWR", templates.EWR)
     HC:T("Garrison ops complete "..airbaseName)
+end
+
+--Spawns units to defend an airbase or FARP
+--Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
+---@param ab AIRBASE target airbase
+---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
+---@param isFrontline boolean? If true, base will be considered as fro
+function HC:SetupAirbaseStatics(airbaseName)
+    local abi = HC.ActiveAirbases[airbaseName]
+    local airbase = AIRBASE:FindByName(airbaseName)
+    HC:T(string.format("[%s] Setting up base statics",airbaseName))
+    local side = string.upper(ab:GetCoalitionName())
+    local owner = country.id.US
+    if (side == "BLUE") then
+        owner = country.id.US
+    elseif(side == "RED") then
+        owner = country.id.USSR
+    else
+        HC:W(string.format("[%s] SeatupAirbaseStatics: base is neither red nor blue, skipping statics"))
+        return
+    end
+
+    local staticsRequired = abi:GetRequiredStatics()
+    --destroy all dead statics, do I have to do that, should I?
+    SET_STATIC:New():FilterZones(airbase.AirbaseZone):FilterPrefixes(string.format("%s|| S ", airbaseName)):FilterOnce()
+            :ForEachStatic(
+                function(s)
+                    if (not s:IsAlive()) then
+                        s:Destroy()
+                    end
+                end)
+
+    --utility function to find a static with prefix in table
+    local function findStaticByPrefix(prefix, list)
+        for k, v in pairs(list) do
+            if (k:startswith(prefix)) then
+                HC:W(string.format("Static in alive garrison statics, prefix: %s alive: %s", prefix, k))
+                return v
+            end
+        end
+        return nil
+    end
+        
+    local aliveStatics = SET_STATIC:New():FilterZones(airbase.AirbaseZone):FilterPrefixes(string.format("%s|| S ", airbaseName)):FilterOnce()
+    --first destroy all static we do not need to free up spawn zones
+    for name, required in pairs(staticsRequired) do
+        local prefix = string.format("%s|| S %s", airbaseName, name)
+        if (not required) then
+            --destroy
+            local static = findStaticByPrefix(prefix, aliveStatics)
+            if(static) then
+                static:Destroy()
+            end
+        end
+    end
+    local childZonesSet = HC:CheckFreeSpawnZones(airbaseName)
+    --now spawn those we need
+    for name, required in pairs(staticsRequired) do
+        local prefix = string.format("%s|| S %s", airbaseName, name)
+        if (required) then
+            --spawn
+            local static = findStaticByPrefix(prefix, aliveStatics)
+            if (not static) then
+                local spawn = SPAWNSTATIC:NewFromStatic(name.."_TEMPLATE", owner)
+                local randomZone = HC:GetRandomChildZone(ab.AirbaseZone, true)
+                if (not randomZone) then
+                    HC:W(string.format("[%s] Couldn't find spawn zone for airbase static %s", airbaseName, name))
+                    break
+                end
+                childZonesSet:RemoveZonesByName(randomZone:GetName())
+                HC.OccupiedSpawnZones[randomZone:GetName()] = true
+                local newStatic = spawn:SpawnFromCoordinate(randomZone:GetPointVec2(), nil, prefix)
+                newStatic:SetProperty("airbaseName", airbaseName)
+                newStatic:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+            end            
+        end
+    end
+
 end

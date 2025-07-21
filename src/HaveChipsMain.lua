@@ -41,6 +41,10 @@ HC = {
         AIRCRAFT = 5,
         HELICOPTER = 3,
         STATIC = 2,
+        BARRACKS = 2,
+        BUNKER = 10,
+        TRANSMITTER = 10,
+        HQ = 10,
         PLAYER = 8
     } --percentage damage for unit type destroyed
 }
