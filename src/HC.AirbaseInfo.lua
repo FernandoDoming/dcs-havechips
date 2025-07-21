@@ -250,11 +250,11 @@ function AIRBASEINFO:GetGarrisonForHP(hp)
     elseif (hp > 40 and hp <= 60) then        
         garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
     elseif (hp > 60 and hp <= 80) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 1 }
     elseif (hp > 80 and hp <= 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
     end
     return garrison
 end
@@ -262,7 +262,7 @@ end
 --Calculates required airbase statics
 ---@return table #Statics table
 function AIRBASEINFO:GetRequiredStatics()
-    return AIRBASEINFO:GetStaticsForHP(self.HP)
+    return AIRBASEINFO:GetRequiredStaticsForHP(self.HP)
 end    
 
 --Calculates statics table for given HP value
@@ -272,22 +272,22 @@ function AIRBASEINFO:GetRequiredStaticsForHP(hp)
     local statics = {
         BARRACKS = true, -- Barracks
         BUNKER = false, -- Fortified bunker
-        TRANSMITTER = false, -- Transmitter object
+        TOWER = false, -- Transmitter object
         HQ = false -- Headquarters building
     }
 
     if (hp <= 20) then
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = false, TOWER = true, HQ = false}
     elseif (hp > 20 and hp <= 40) then
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = false, TOWER = true, HQ = false}
     elseif (hp > 40 and hp <= 60) then        
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = true}
     elseif (hp > 60 and hp <= 80) then
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = false}
     elseif (hp > 80 and hp <= 90) then
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = true}
     elseif (hp > 90) then
-        statics = { BARRACKS = true, BUNKER = false, TRANSMITTER = false, HQ = false}
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = false}
     end
     return statics
 end
