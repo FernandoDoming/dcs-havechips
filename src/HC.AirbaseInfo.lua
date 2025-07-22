@@ -85,7 +85,7 @@ function AIRBASEINFO:SetDefenseUnitsActive(state)
     local delay = 0
     SET_UNIT:New():FilterZones({airbase.AirbaseZone}):FilterOnce():ForEachUnit(
         function(unit)
-            if(unit:GetName().startswith(string.format("%s|| D", self.Name))) then
+            if(unit:GetName():startswith(string.format("%s|| D", self.Name))) then
                 if (state) then
                     HC:T(string.format("Activating defense unit %s for %s", unit:GetName(), self.Name))
                     local mytimer = TIMER:New(unit.SetAIOn, unit)
