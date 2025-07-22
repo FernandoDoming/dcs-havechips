@@ -33,8 +33,14 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(8, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
-    chief:SetTacticalOverviewOn() --for debugging
-    chief:SetVerbosity(2) --set to 5 for debugging
+
+    if (HC.DEBUG) then
+        chief:SetTacticalOverviewOn() --for debugging
+        chief:SetVerbosity(5)
+    else
+        chief:SetVerbosity(0)
+    end
+    
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         HC:W("Zone is now lost")

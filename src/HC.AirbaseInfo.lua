@@ -43,6 +43,7 @@ function AIRBASEINFO:AddHP(resupplyPercent)
     else
         self.HP = self.HP + resupplyPercent          
     end 
+    HC:T(string.format("%s is now at %.1f HP, drawing label", self.Name, self.HP))
     self:DrawLabel()
 end
 
@@ -109,7 +110,7 @@ function AIRBASEINFO:DrawLabel()
     local BLUE_COLOR_AIRBASE = {0,0,1}
     local RED_COLOR_FARP = {1,0.2,0.2}
     local RED_COLOR_AIRBASE = {0.8,0,0}
-    local COLOR_MAIN_BASE_TEXT = {1,1,1}
+    local COLOR_MAIN_BASE_TEXT = {0.8,0.8,0}
     local COLOR_FARP_FRONTLINE_TEXT = {1,1,1}
     local colorFill = {1,0,0}
     local fillAlpha = 0.7
@@ -126,7 +127,7 @@ function AIRBASEINFO:DrawLabel()
         colorText = COLOR_FARP_FRONTLINE_TEXT
     end
     if (ab:GetCoalition() == coalition.side.RED) then
-        if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+        if(isAirbase) then
             colorFill = RED_COLOR_AIRBASE
         else
             colorFill = RED_COLOR_FARP
@@ -141,9 +142,7 @@ function AIRBASEINFO:DrawLabel()
         colorFill = {1,1,1}
         colorText = {0.3,0.3,0.3}
     end
-    if(not self:IsFrontline(ab) and isAirbase) then
-        colorText = {1, 1, 0.5}
-    end
+
     local HPIndicator =""
     for i=1, math.floor(self.HP/10) do
         HPIndicator = HPIndicator.."█"
@@ -221,13 +220,17 @@ function AIRBASEINFO:DrawLabel()
             end
         end        
     end
+    HC:T("Drawing label for "..ab:GetName())
     if (enemyCoalition) then
         --friendlies don't get a list of enemy missions targeting the zone
+        HC:T(string.format("FRIENDLY: %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText))
+        HC:T(string.format("ENEMY: %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText))
         self.MarkIdFriendly = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
         self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText), enemyCoalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
     else
         --neutral
         self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
+        HC:T(string.format("NEUTRAL %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""))
     end
 
 end 

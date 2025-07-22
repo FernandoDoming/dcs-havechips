@@ -18,7 +18,9 @@ function HC:OnBaseResupplyTick()
 HC:T("BASE RESUPPLY TICK START")
     local resupplyPercent = (HC.PASSIVE_RESUPPLY_RATE/3600) * HC.BASE_RESUPPLY_INTERVAL
     local delay = 0
-    for _, abi in pairs(HC.ActiveAirbases) do
+    for name, abi in pairs(HC.ActiveAirbases) do
+        local ab = AIRBASE:FindByName(name)
+        abi.Coalition = ab:GetCoalition()
         delay = delay + 0.5
         HC:T(string.format("[%s] Resupplying by %.2f%%", abi.Name, resupplyPercent))
         local mytimer = TIMER:New(abi.AddHP, abi, resupplyPercent)

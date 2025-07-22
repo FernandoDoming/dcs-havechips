@@ -147,6 +147,7 @@ end
 --Spawns FARP support units necessary for functional FARP
 ---@param farp AIRBASE FARP to set up
 function HC:SetupFARPSupportUnits(farp)
+    HC:T(string.format("[%s] Setting up FARP support units", farp:GetName()))
     local farpStatic = STATIC:FindByName(farp:GetName(), false)
     if (not farpStatic) then
         HC:W(string.format("FARP STATIC not found, Can't spawn FARP support units at %s", farp:GetName()))
@@ -256,6 +257,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local airwingName = string.format("%s Air wing %s", side, airbaseName)
     local brigade = nil
     local airwing = nil
+    HC:T(string.format("[%s] Setting up CHIEF units", airbaseName))
     for _, legion in pairs(chief.commander.legions) do
         if (not brigade) then
             if (legion:GetName() == brigadeName) then
@@ -277,7 +279,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     if (not airwing) then
         airwing = AIRWING:New(warehouse:GetName(), airwingName)
     end
-
+    HC:T(string.format("[%s] Setting up %s", airbaseName, brigadeName))
     --Ground units
     for i=1, #(templates.LIGHT_INFANTRY) do
         local cohortName = string.format("%s|| Infantry %s %d", airbase:GetName(), side, i)
@@ -320,14 +322,18 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     brigade.spawnzonemaxdist = 50 --spawn units max 50m from warehouse static
     brigade:SetRespawnAfterDestroyed(HC.WAREHOUSE_RESPAWN_INTERVAL) -- 10 minutes to respawn if destroyed
     chief:AddBrigade(brigade)
+    HC:T(string.format("[%s] Setting up %s DONE", airbaseName, brigadeName))
     
     --Air unit mission type groups
     local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
-    --airwing:SetTakeoffHot()
-    airwing:SetTakeoffAir() --For quicker testing to not have to wait for AI to take off
+    if (HC.DEBUG) then
+        airwing:SetTakeoffAir()--For quicker testing to not have to wait for AI to take off
+    else
+        airwing:SetTakeoffHot()
+    end
     airwing:SetDespawnAfterHolding(true)
     airwing:SetDespawnAfterLanding(true)
     airwing:SetAirbase(airbase)

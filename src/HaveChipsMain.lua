@@ -1,6 +1,7 @@
 HC = {
-    VERSION="0.1.2",
+    VERSION="0.1.3",
     TRACE = true, --enable or disable trace messages
+    DEBUG = false, --makes it easier to debug, e.g. AI will spawn in the air
     RED = { 
         TEMPLATES = {},
         INVENTORY_TEMPLATES = {
@@ -19,8 +20,8 @@ HC = {
     },
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
-    FRONTLINE_PROXIMITY_THRESHOLD = 45, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
-    REAR_AREA_DISTANCE_THRESHOLD = 65, -- Distance in kilometers, if an airbase is further than this from nearest enemy airbase it is considered a rear area airbase
+    FRONTLINE_PROXIMITY_THRESHOLD = 60, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
+    REAR_AREA_DISTANCE_THRESHOLD = 65, -- Distance in kilometers, if no enemy units are closer than this, base units can be turned off
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "AIRLIFT", "STRATEGIC_BOMBER", "FRONTLINE_CAP", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"},
     ActiveAirbases = {},
     TIMERS = {
@@ -84,6 +85,7 @@ function HC:Start()
         bases:ForEachAirbase(
             function(b)
                 local abi = AIRBASEINFO:NewFromAIRBASE(b, 50)
+                HC:T(abi.Name)
                 for i=1, #wpList do
                     local zone = b.AirbaseZone
                     if (zone:IsVec2InZone(wpList[i])) then
@@ -104,10 +106,11 @@ function HC:Start()
         HC:T("Loading campaign progress")
         local success = false
         local data = {}
-        success, data = HC:LoadTable(HC.BASE_PATH..filename)        
+        success, data = HC:LoadTable(HC.BASE_PATH..filename)
         if(success) then
             HC:T("Table loaded from file "..HC.BASE_PATH..filename)
             for i=1, #data do
+                HC:T(abi.Name)
                 local abi = AIRBASEINFO:NewFromTable(data[i])
                 HC.ActiveAirbases[data[i].Name] = abi
                 abi:DrawLabel()
@@ -146,7 +149,11 @@ function HC:Start()
             -- This is a static object required by MOOSE CHIEF, can be any static (yes, even a cow!)
             local staticWarehouse = HC:SetupAirbaseStaticWarehouse(ab)
             --add AI units to base to be used by CHIEF
-            HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
+            
+            
+            --HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
+            
+            
             --spawn base defense units
             HC:SetupAirbaseDefense(ab, abi.HP, isFrontline)
             opsZone:SetObjectCategories({Object.Category.UNIT}) --after populating the zone, we can set that only units can capture zones
@@ -194,8 +201,8 @@ function HC:Start()
     -- Setup engagement ranges for AAA (non-advanced SAM units like Flaks etc) and if you want them to be AIOff
     --blinder:SetAAARanges(60,true) -- defaults are 60, and true
 
-    HC.BLUE.CHIEF:__Start(1)
-    HC.RED.CHIEF:__Start(1)
+    --HC.BLUE.CHIEF:__Start(1)
+    --HC.RED.CHIEF:__Start(1)
     HC:T("Startup completed")
 end
 
