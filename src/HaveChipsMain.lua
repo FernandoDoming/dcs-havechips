@@ -1,5 +1,5 @@
 HC = {
-    VERSION="0.1.3",
+    VERSION="0.1.4",
     TRACE = true, --enable or disable trace messages
     DEBUG = true, --makes it easier to debug, e.g. AI will spawn in the air
     RED = { 
@@ -33,7 +33,7 @@ HC = {
     BASE_REPAIR_INTERVAL = 10 * 60, --base defense units are (re)spawned in this interval based on base HP at that moment
     OccupiedSpawnZones = {}, --keep track of used spawn zones to hopefuly prevent spawning objects on top of each other
     EventHandler = {},
-    WAREHOUSE_RESPAWN_INTERVAL = 1 * 60, --interval in seconds for warehouse respawn if destroyed
+    WAREHOUSE_RESPAWN_INTERVAL = 10 * 60, --interval in seconds for warehouse respawn if destroyed
     AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST = {
         DEFAULT = 0.5,
         AAA = 1,

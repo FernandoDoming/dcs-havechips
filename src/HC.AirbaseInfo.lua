@@ -43,7 +43,6 @@ function AIRBASEINFO:AddHP(resupplyPercent)
     else
         self.HP = self.HP + resupplyPercent          
     end 
-    HC:T(string.format("%s is now at %.1f HP, drawing label", self.Name, self.HP))
     self:DrawLabel()
 end
 
@@ -52,13 +51,11 @@ function AIRBASEINFO:RecalculateActivityState()
     if (self:ShouldDeactivate()) then
         if (self.IsActive) then
             self:SetDefenseUnitsActive(false)
-            self.IsActive = false
             HC:T(string.format("Deactivating defense units for %s", self.Name))
         end
     else
         if (not self.IsActive) then
             self:SetDefenseUnitsActive(true)
-            self.IsActive = true
             HC:T(string.format("Activating defense units for %s", self.Name))
         end
     end
@@ -92,16 +89,19 @@ function AIRBASEINFO:SetDefenseUnitsActive(state)
                     local mytimer = TIMER:New(unit.SetAIOn, unit)
                     mytimer:Start(delay)
                     --unit:SetAIOn()
+                    self.IsActive = true
                 else
                     HC:T(string.format("Deativating defense unit %s for %s", unit:GetName(), self.Name))
                     local mytimer = TIMER:New(unit.SetAIOff, unit)
                     mytimer:Start(delay)
                     --unit:SetAIOff()
+                    self.IsActive = false
                 end
                 delay = delay + 0.5
             end
         end
     )
+    self:DrawLabel()
 end
 
 -- Draws airbase or FARP label on F10 map
@@ -116,7 +116,7 @@ function AIRBASEINFO:DrawLabel()
     local fillAlpha = 0.7
     local colorText = {1,1,1}
     local textAlpha = 1
-    local textSize = 12
+    local textSize = 13
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
     local isAirbase = ab:GetCategory() == Airbase.Category.AIRDROME or #(ab.runways)>0
@@ -220,17 +220,17 @@ function AIRBASEINFO:DrawLabel()
             end
         end        
     end
-    HC:T("Drawing label for "..ab:GetName())
+    local activeStatus = ""
+    if (self.IsActive) then
+        activeStatus = "▶"
+    end
     if (enemyCoalition) then
         --friendlies don't get a list of enemy missions targeting the zone
-        HC:T(string.format("FRIENDLY: %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText))
-        HC:T(string.format("ENEMY: %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText))
-        self.MarkIdFriendly = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
+        self.MarkIdFriendly = coord:TextToAll(string.format(" %d. %s %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), activeStatus, HPIndicator, self.HP, friendlyMisionsText), self.Coalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)
         self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, enemyMissionsText), enemyCoalition, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
     else
         --neutral
         self.MarkIdEnemy = coord:TextToAll(string.format(" %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""), coalition.side.ALL, colorText, textAlpha, colorFill, fillAlpha, textSize, true)        
-        HC:T(string.format("NEUTRAL %d. %s %s \n %s %.1f %% \n%s", self.WPIndex,baseTypePrefix, ab:GetName(), HPIndicator, self.HP, ""))
     end
 
 end 
@@ -305,17 +305,17 @@ function AIRBASEINFO:GetGarrisonForHP(hp)
     }
 
     if (hp <= 20) then
-        garrison = { BASE = 1, SHORAD = 0, SAM = 0, EWR = 0 }
+        garrison = { BASE = 0, SHORAD = 0, SAM = 0, EWR = 0 }
     elseif (hp > 20 and hp <= 40) then
-        garrison = { BASE = 1, SHORAD = 1, SAM = 0, EWR = 0 }
+        garrison = { BASE = 1, SHORAD = 0, SAM = 0, EWR = 0 }
     elseif (hp > 40 and hp <= 60) then        
-        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
+        garrison = { BASE = 1, SHORAD = 1, SAM = 0, EWR = 1 }
     elseif (hp > 60 and hp <= 80) then
         garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 1 }
     elseif (hp > 80 and hp <= 90) then
         garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 1, SAM = 3, EWR = 1 }
     end
     return garrison
 end
