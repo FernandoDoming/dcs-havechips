@@ -113,7 +113,7 @@ end
 
 --Checks if an airbase is close to frontline
 ---@param airbase AIRBASE Airbase to check
----@return boolean #true if airbase is close to the frontline
+---@return boolean, boolean #isFrontline - true if airbase is close to the frontline, isRearArea - true if airbase is far away from frontline
 function HC:IsFrontlineAirbase(airbase)
     local coord = airbase:GetCoordinate()
     local enemySide = nil
@@ -131,10 +131,27 @@ function HC:IsFrontlineAirbase(airbase)
     --         env.info("Base in filtered set "..enemySide.." "..b:GetCoalitionName().." "..b:GetName())
     --     end
     -- )
-    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord) --this just doesn't work
+    local closestEnemyBase = enemyBases:FindNearestAirbaseFromPointVec2(coord)
     local dist = coord:Get2DDistance(closestEnemyBase:GetCoordinate())
-    return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000)
+    return (dist < HC.FRONTLINE_PROXIMITY_THRESHOLD * 1000), (dist > HC.REAR_AREA_DISTANCE_THRESHOLD * 1000)
 end
+
+---Finds closest unit to specified point
+---@param origin Coordinate Point to search from
+---@param side string Coalition side to search in, "red" or "blue"
+function HC:DistanceToClosestUnit(origin, side)
+    local units = SET_UNIT:New():FilterCoalitions(side):FilterOnce()
+    local closestDistance = math.huge
+    units:ForEachUnit(
+        function(unit)
+            local dist = origin:Get2DDistance(unit:GetCoordinate())
+            if (dist < closestDistance) then
+                closestDistance = dist
+            end
+        end
+    )
+    return closestDistance
+end    
 
 --goes through all airbase spawn zones and checks if they are empty
 --if the zone is empty, remove it from OccupiedZones list 
@@ -230,8 +247,8 @@ function HC:SaveTable(table, filename)
     if (table == nil) then
         HC:E("Table is nil")
         return false
-    end        
-
+    end
+    
     local json = NET.Lua2Json(table)
     local f = assert(io.open(filename, "wb"))
     if (f == nil) then
@@ -415,6 +432,19 @@ end
 ---@param unit DCSUnit DCS unit to check
 ---@return number #Damage in %
 function HC.CalculateDamageForUnitLost(unit)
+    if (unit.Category == Object.Category.STATIC) then
+        local static = STATIC:FindByName(unit:getName(), false) 
+        if(static) then
+            local damage = static:GetProperty("damageWhenLost")
+            if (damage) then
+                return damage
+            else
+                return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.STATIC
+            end
+        else 
+            return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.STATIC        
+        end  
+    end
     if (Unit.getPlayerName(unit)) then
         return HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST.PLAYER
     elseif (HC.IsPlane(unit)) then

@@ -34,7 +34,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(8, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn() --for debugging
-    chief:SetVerbosity(5) --set to 5 for debugging
+    chief:SetVerbosity(2) --set to 5 for debugging
     chief:SetDetectStatics(true)
     function chief:OnAfterZoneLost(from, event, to, opszone)
         HC:W("Zone is now lost")
@@ -47,10 +47,6 @@ function HC:CreateChief(side, alias)
     function chief:OnAfterZoneEmpty(from, event, to, opszone)
         --this eventhandler will be moved to HC main
         HC:W("Zone is now empty")
-        local ab = AIRBASE:FindByName(opszone:GetName())
-        --zone neutralized, send troops to capture it
-        --possible scenario
-        --find closest friendly airbase to neutralized zone, create OPSTRANSPORT
     end
     
 
@@ -72,17 +68,19 @@ end
 ---@return resourcesEmpty table, resourcesOccupied table Resource tables for empty zone and occupied zone scenarios
 function HC:GetChiefZoneResponse(chief)
         local resourceOccupied, helos = chief:CreateResource(AUFTRAG.Type.CASENHANCED, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-        --HC.BLUE.CHIEF:AddToResource(resourceOccupied, AUFTRAG.Type.CAPTUREZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-        --local resourceOccupied, _ = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_TANK)
-
-        --local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
         local resourceEmpty, emptyIFV = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
 
-        --HC.BLUE.CHIEF:AddToResource(resourceEmpty, AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-        --HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.GROUND_APC})
-        --HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.GROUND_IFV})
-        --HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 12, {GROUP.Attribute.AIR_TRANSPORTHELO})
-        --local ifvs = HC.BLUE.CHIEF:AddTransportToResource(emptyInfantry, 1, 2, {GROUP.Attribute.GROUND_IFV})
-        --HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, resourceOccupied, resourceEmpty)
+
+        -- local resourceOccupied, armor = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        -- chief:AddToResource(resourceOccupied, AUFTRAG.Type.GROUNDESCORT, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+        -- chief:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1)
+        -- local assaultInf = chief:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 1)
+        -- chief:AddTransportToResource(assaultInf, 1, 1, GROUP.Attribute.GROUND_IFV)
+        
+
+        -- --local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
+        -- local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
+        -- chief:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
+
         return resourceEmpty, resourceOccupied
 end

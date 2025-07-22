@@ -82,13 +82,20 @@ end
 --Adds static warehouse to airbase (required by MOOSE CHIEF)
 ---@param airbase AIRBASE MOOSE airbase
 function HC:SetupAirbaseStaticWarehouse(airbase)
-    local SIDE = string.upper(airbase:GetCoalitionName())
+    local side = string.upper(airbase:GetCoalitionName())
     -- Check if we have an enemy warehouse left over from before
+    local owner = country.id.US
+
     local enemySide = ""
-    if (SIDE == "RED") then
+    if (side == "BLUE") then
+        owner = country.id.US
+        enemySide = "RED"
+    elseif(side == "RED") then
+        owner = country.id.USSR
         enemySide = "BLUE"
     else
-        enemySide = "RED"
+        HC:W(string.format("[%s] SeatupAirbaseStatics: base is neither red nor blue, skipping statics"))
+        return
     end
     local warehouseName = "WAREHOUSE_"..airbase:GetName()
     --Check if we already have a warehouse
@@ -110,7 +117,7 @@ function HC:SetupAirbaseStaticWarehouse(airbase)
         HC.OccupiedSpawnZones[randomZone:GetName()] = true
         HC:T(string.format("Spawning warehouse on %s in zone %s", airbase:GetName(), randomZone:GetName()))
     end
-    local whspawn = SPAWNSTATIC:NewFromStatic(SIDE.."_WAREHOUSE_TEMPLATE")
+    local whspawn = SPAWNSTATIC:NewFromStatic("WAREHOUSE_TEMPLATE", owner)
     warehouse = whspawn:SpawnFromCoordinate(position, nil, warehouseName)
     if(airbase:GetCategory() == Airbase.Category.HELIPAD and #(airbase.runways)==0) then
         HC:SetupFARPSupportUnits(airbase)
@@ -163,11 +170,11 @@ function HC:SetupFARPSupportUnits(farp)
     FARPSupportObjects.WINDSOCK.Position = farplocation:Translate(radius + 20,farpStatic:GetHeading())
 
     local farpName = farp:GetName()
-    local spawnCountry = country.UN_PEACEKEEPERS
+    local spawnCountry = country.id.UN_PEACEKEEPERS
     if(farp:GetCoalition() == coalition.side.RED) then
-        spawnCountry = country.USSR
+        spawnCountry = country.id.USSR
     elseif (farp:GetCoalition() == coalition.side.BLUE) then
-        spawnCountry = country.US
+        spawnCountry = country.id.US
     end
 
     for k,v in pairs(FARPSupportObjects) do
@@ -239,12 +246,14 @@ end
 function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     --Generate units stationed at base and add them to chief 
     local side = string.upper(airbase:GetCoalitionName())
+    local airbaseName = airbase:GetName()
+    local abi = HC.ActiveAirbases[airbaseName]
     local templates = HC[side].TEMPLATES
     local chief = HC[side].CHIEF
-    local airbaseStorage = STORAGE:FindByName(airbase:GetName())
+    local airbaseStorage = STORAGE:FindByName(airbaseName)
     --check chief units, remove if legions already exist
-    local brigadeName = string.format("%s Brigade %s", side, airbase:GetName())
-    local airwingName = string.format("%s Air wing %s", side, airbase:GetName())
+    local brigadeName = string.format("%s Brigade %s", side, airbaseName)
+    local airwingName = string.format("%s Air wing %s", side, airbaseName)
     local brigade = nil
     local airwing = nil
     for _, legion in pairs(chief.commander.legions) do
@@ -269,25 +278,14 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         airwing = AIRWING:New(warehouse:GetName(), airwingName)
     end
 
-    -- Finda a safe spawn zone
-    local childZoneSet = HC:GetChildZoneSet(airbase.AirbaseZone, true)
-    local randomZone = airbase.AirbaseZone
-    if (childZoneSet:Count() == 0) then
-        HC:W(string.format("[%s] Couldn't find child spawn zone for brigade...will spawn in random place...", airbase:GetName()))          
-    else
-        randomZone = childZoneSet:GetRandomZone(10)
-        HC:T(string.format("Brigade spawn zone on %s set to %s", airbase:GetName(), randomZone:GetName()))
-    end
     --Ground units
     for i=1, #(templates.LIGHT_INFANTRY) do
         local cohortName = string.format("%s|| Infantry %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, cohortName)
+            platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, cohortName)
             platoon:SetGrouping(4)
-            platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.ONGURAD}, 70)
-            -- platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK,}, 50)
-            -- platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 50)
+            platoon:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ONGUARD, AUFTRAG.Type.GROUNDATTACK }, 70)
             platoon:SetAttribute(GROUP.Attribute.GROUND_INFANTRY)
             --platoon:SetMissionRange(5)
             brigade:AddPlatoon(platoon)        
@@ -297,7 +295,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local cohortName = string.format("%s|| Mechanized infantry %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.MECHANIZED[i], 2, cohortName)
+            platoon = PLATOON:New(templates.MECHANIZED[i], 2, cohortName)
             platoon:SetGrouping(5)
             platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
@@ -310,7 +308,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local cohortName = string.format("%s|| Tank %s %d", airbase:GetName(), side, i)
         local platoon = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-            local platoon = PLATOON:New(templates.TANK[i], 2, cohortName)
+            platoon = PLATOON:New(templates.TANK[i], 2, cohortName)
             platoon:SetGrouping(6)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
             platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
@@ -319,16 +317,14 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             brigade:AddPlatoon(platoon)            
         end
     end
-    --brigade:SetSpawnZone(airbase.AirbaseZone)
-    brigade:SetSpawnZone(randomZone)
-    HC.OccupiedSpawnZones[randomZone:GetName()] = true
+    brigade.spawnzonemaxdist = 50 --spawn units max 50m from warehouse static
     brigade:SetRespawnAfterDestroyed(HC.WAREHOUSE_RESPAWN_INTERVAL) -- 10 minutes to respawn if destroyed
     chief:AddBrigade(brigade)
     
     --Air unit mission type groups
     local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
-    local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.RESCUEHELO, AUFTRAG.Type.CTLD}
+    local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
     --airwing:SetTakeoffHot()
     airwing:SetTakeoffAir() --For quicker testing to not have to wait for AI to take off
@@ -344,13 +340,13 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local squadron = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
             squadron=SQUADRON:New(templates.TRANSPORT_HELI[i], 4, cohortName) --Ops.Squadron#SQUADRON
+            squadron:AddMissionCapability(HELI_TRANSPORT_TASKS) -- The missions squadron can perform with performance score for those missions 
             squadron:SetAttribute(GROUP.Attribute.AIR_TRANSPORTHELO)
             squadron:SetGrouping(1) -- 1 aircraft per group.
-            squadron:SetModex(10)  -- Tail number of the sqaud start with 60
-            squadron:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT}, 90) -- The missions squadron can perform with performance score for those missions 
-            squadron:SetMissionRange(60) -- Squad will be considered for targets within 40 NM of its airwing location.
+            squadron:SetMissionRange(60) -- Squadron will be considered for targets within 40 NM of its airwing location.
             --Time to get ready again, time to repair per life point taken
             squadron:SetTurnoverTime(10, 0) --maintenance time, repair time [minutes]
+            airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
             airwing:AddSquadron(squadron)
             --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
             local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
@@ -363,11 +359,10 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         local squadron = nil
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
             squadron = SQUADRON:New(templates.ATTACK_HELI[i], 2, cohortName) --Ops.Squadron#SQUADRON
+            squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform            
+            squadron:SetAttribute(GROUP.Attribute.AIR_ATTACKHELO)            
             squadron:SetGrouping(2)
-            squadron:SetModex(30)
-            squadron:AddMissionCapability( {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 80) -- The missions squadron can perform
             squadron:SetMissionRange(40)
-            squadron:SetAttribute(GROUP.Attribute.AIR_ATTACKHELO)
             squadron:SetTurnoverTime(10, 0)
             airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
             airwing:AddSquadron(squadron)
@@ -378,76 +373,127 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     end
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways)>0) then
-        for i=1, #(templates.CAP) do
-            local templateGroupName = templates.CAP[i]
-            local cohortName = string.format("%s|| Fighter Sq. %s %d", airbase:GetName(), side, i)
+        if (abi:IsFrontline()) then
+            --Only FRONTLINE_CAP and CAS for frontline airbases
+            --Fighter CAP for frontline airbases
+            local templateGroupName = HC:GetRandomTemplates(side, "FRONTLINE_CAP", 1)[1]
+            local squadronName = string.format("%s|| Frontline Fighter Sq. %s", airbaseName, side)
             local squadron = nil
-            if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                squadron = SQUADRON:New(templates.CAP[i], 2, cohortName) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2)
-                squadron:SetModex(10)
+            if not UTILS.IsAnyInTable(_COHORTNAMES, squadronName) then
+                squadron = SQUADRON:New(templateGroupName, 2, squadronName) --Ops.Squadron#SQUADRON
                 squadron:AddMissionCapability(FIGHTER_TASKS, 90)
-                squadron:SetMissionRange(80)
+                squadron:SetGrouping(2)
+                squadron:SetMissionRange(40)
                 squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
+                airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, FIGHTER_TASKS)
                 airwing:AddSquadron(squadron)
                 --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                 local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                 airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                      
-            end              
-        end
-        for i=1, #(templates.CAS) do
-            local templateGroupName = templates.CAS[i]
-            local cohortName = string.format("%s|| Attack Sq. %s %d", airbase:GetName(), side, i)
-            local squadron = nil
-            if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                squadron = SQUADRON:New(templates.CAS[i], 2, cohortName) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2)
-                squadron:SetModex(30)
-                squadron:AddMissionCapability(STRIKER_TASKS, 90)
-                squadron:SetMissionRange(80)
-                squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
-                airwing:AddSquadron(squadron)
-                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
-                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
-                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                 
+            end  
+            --CAS for frontline airbases
+                templateGroupName = HC:GetRandomTemplates(side, "CAS", 1)[1]
+                squadronName = string.format("%s|| Frontline Attack Sq. %s", airbaseName, side)
+                squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, squadronName) then
+                    squadron = SQUADRON:New(templateGroupName, 2, squadronName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability({AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}, 90)
+                    squadron:SetGrouping(2)
+                    squadron:SetMissionRange(40)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED})
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                 
+                end
+            
+        else
+            --For regular airbases we have all mission types
+            for i=1, #(templates.CAP) do
+                local templateGroupName = templates.CAP[i]
+                local cohortName = string.format("%s|| Fighter Sq. %s %d", airbaseName, side, i)
+                local squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
+                    squadron = SQUADRON:New(templates.CAP[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability(FIGHTER_TASKS, 90)
+                    squadron:SetGrouping(2)
+                    squadron:SetMissionRange(80)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                      
+                end              
             end
-        end
-        for i=1, #(templates.STRIKE) do
-            local templateGroupName = templates.STRIKE[i]
-            local cohortName = string.format("%s|| Strike Sq. %s %d", airbase:GetName(), side, i)
-            local squadron = nil
-            if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                squadron = SQUADRON:New(templates.STRIKE[i], 2, cohortName) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2)
-                squadron:SetModex(50)
-                squadron:AddMissionCapability(STRIKER_TASKS, 90)
-                squadron:SetMissionRange(80)
-                squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
-                airwing:AddSquadron(squadron)
-                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
-                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
-                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
+            for i=1, #(templates.CAS) do
+                local templateGroupName = templates.CAS[i]
+                local cohortName = string.format("%s|| Attack Sq. %s %d", airbaseName, side, i)
+                local squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
+                    squadron = SQUADRON:New(templates.CAS[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability(STRIKER_TASKS, 90)
+                    squadron:SetGrouping(2)
+                    squadron:SetMissionRange(80)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                 
+                end
             end
-        end
-        for i=1, #(templates.SEAD) do
-            local templateGroupName = templates.SEAD[i]
-            local cohortName = string.format("%s|| SEAD Sq. %s %d", airbase:GetName(), side, i)
-            local squadron = nil
-            if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                squadron=SQUADRON:New(templates.SEAD[i], 1, cohortName) --Ops.Squadron#SQUADRON
-                squadron:SetGrouping(2)
-                squadron:SetModex(60)
-                squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)
-                squadron:SetMissionRange(120)
-                squadron:SetTurnoverTime(10, 0)
-                airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
-                airwing:AddSquadron(squadron)
-                --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
-                local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
-                airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                    
+            for i=1, #(templates.STRIKE) do
+                local templateGroupName = templates.STRIKE[i]
+                local cohortName = string.format("%s|| Strike Sq. %s %d", airbaseName, side, i)
+                local squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
+                    squadron = SQUADRON:New(templates.STRIKE[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability(STRIKER_TASKS, 90)                
+                    squadron:SetGrouping(2)
+                    squadron:SetMissionRange(80)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
+                end
+            end
+            for i=1, #(templates.SEAD) do
+                local templateGroupName = templates.SEAD[i]
+                local cohortName = string.format("%s|| SEAD Sq. %s %d", airbaseName, side, i)
+                local squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
+                    squadron=SQUADRON:New(templates.SEAD[i], 1, cohortName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)                
+                    squadron:SetGrouping(2)
+                    squadron:SetMissionRange(120)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                    
+                end
+            end
+            for i=1, #(templates.AIRLIFT) do
+                local templateGroupName = templates.AIRLIFT[i]
+                local cohortName = string.format("%s|| Transport Sq. %s %d", airbaseName, side, i)
+                local squadron = nil
+                if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
+                    squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
+                    squadron:AddMissionCapability({AUFTRAG.Type.CARGOTRANSPORT}, 90)                
+                    squadron:SetGrouping(1)
+                    squadron:SetMissionRange(120)
+                    squadron:SetTurnoverTime(10, 0)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, {AUFTRAG.Type.CARGOTRANSPORT})
+                    airwing:AddSquadron(squadron)
+                    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+                    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+                    airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                    
+                end
             end
         end
     end    
@@ -477,11 +523,9 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
         EWR = string.format("%s|| D %s EWR ", airbaseName, side),
     }
 
-    
-
     local groupsOnBase = SET_GROUP:New():FilterPrefixes(string.format("%s|| D ", airbaseName)):FilterOnce()
     --this is the current state of defences, we will use that to determine if there are some groups we need to re)spawn) or destroy
-    local aliveGarrisonGroups = { BASE = {C}, SHORAD = {}, SAM = {}, EWR = {} }
+    local aliveGarrisonGroups = { BASE = {}, SHORAD = {}, SAM = {}, EWR = {} }
     local totalAlive = 0
     --categorize defense garrison groups found
     groupsOnBase:ForEachGroup(    
@@ -622,6 +666,10 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
                                     :InitRandomizeTemplate(templates)
                 HC:T(string.format("[%s] Spawning %s at [%s]", airbaseName, unitAlias,  randomZone:GetName()))
                 local group = spawn:SpawnFromCoordinate(randomZone:GetPointVec2())
+                group:SetProperty("airbaseName", airbaseName)
+                for _, u in pairs(group:GetUnits()) do
+                    u:SetProperty("airbaseName", airbaseName)
+                end
                 childZonesSet:RemoveZonesByName(randomZone:GetName())
                 HC.OccupiedSpawnZones[randomZone:GetName()] = true
                 chief:AddAgent(group)
@@ -636,4 +684,94 @@ function HC:SetupAirbaseDefense(ab, hp, isFrontline)
     local gSAM = spawnAsRequired("SAM", templates.SAM)
     local gEWR = spawnAsRequired("EWR", templates.EWR)
     HC:T("Garrison ops complete "..airbaseName)
+    HC:SetupAirbaseStatics(airbaseName)
+end
+
+--Spawns units to defend an airbase or FARP
+--Number and type of units depends on base hp percentage which abstracts overall combat readiness, morale, supply state...
+---@param ab AIRBASE target airbase
+---@param hp number (0-100) which abstracts overall combat readiness, morale, supply state...
+---@param isFrontline boolean? If true, base will be considered as fro
+
+--Spawns static on airbase or FARP
+function HC:SetupAirbaseStatics(airbaseName)
+    local abi = HC.ActiveAirbases[airbaseName]
+    local airbase = AIRBASE:FindByName(airbaseName)
+    HC:T(string.format("[%s] Setting up base statics",airbaseName))
+    local side = string.upper(airbase:GetCoalitionName())
+    local owner = country.id.US
+    local enemySide = ""
+    if (side == "BLUE") then
+        owner = country.id.US
+        enemySide = "RED"
+    elseif(side == "RED") then
+        owner = country.id.USSR
+        enemySide = "BLUE"
+    else
+        HC:W(string.format("[%s] SeatupAirbaseStatics: base is neither red nor blue, skipping statics"))
+        return
+    end
+
+    local staticsRequired = abi:GetRequiredStatics()
+    --destroy all dead statics, do I have to do that, should I?
+    SET_STATIC:New():FilterZones({airbase.AirbaseZone}):FilterPrefixes(string.format("%s|| S ", airbaseName)):FilterOnce()
+            :ForEachStatic(
+                function(s)
+                    if (not s:IsAlive()) then
+                        s:Destroy()
+                    end
+                end)
+    --destroy all enemy statics if any are left over after base was captured
+        SET_STATIC:New():FilterZones({airbase.AirbaseZone}):FilterCoalitions({string.lower(enemySide)}):FilterOnce()
+            :ForEachStatic(
+                function(s)
+                    s:Destroy()
+                end)
+    --utility function to find a static with prefix in table
+    local function findStaticByPrefix(prefix, list)
+        for k, v in pairs(list) do
+            if (k:startswith(prefix)) then
+                HC:W(string.format("Static in alive garrison statics, prefix: %s alive: %s", prefix, k))
+                return v
+            end
+        end
+        return nil
+    end
+        
+    local aliveStatics = SET_STATIC:New():FilterZones({airbase.AirbaseZone}):FilterPrefixes(string.format("%s|| S ", airbaseName)):FilterOnce()
+    --first destroy all static we do not need to free up spawn zones
+    for name, required in pairs(staticsRequired) do
+        local prefix = string.format("%s|| S %s", airbaseName, name)
+        if (not required) then
+            --destroy
+            local static = findStaticByPrefix(prefix, aliveStatics)
+            if(static) then
+                static:Destroy()
+            end
+        end
+    end
+    local childZonesSet = HC:CheckFreeSpawnZones(airbaseName)
+    --now spawn those we need
+    for name, required in pairs(staticsRequired) do
+        local prefix = string.format("%s|| S %s", airbaseName, name)
+        if (required) then
+            --spawn
+            local static = findStaticByPrefix(prefix, aliveStatics)
+            if (not static) then
+                local spawn = SPAWNSTATIC:NewFromStatic(name.."_TEMPLATE", owner)
+                local randomZone = HC:GetRandomChildZone(airbase.AirbaseZone, true)
+                if (not randomZone) then
+                    HC:W(string.format("[%s] Couldn't find spawn zone for airbase static %s", airbaseName, name))
+                    break
+                end
+                childZonesSet:RemoveZonesByName(randomZone:GetName())
+                HC.OccupiedSpawnZones[randomZone:GetName()] = true
+                HC:T(string.format("[%s] Spawning static %s at [%s]", airbaseName, prefix, randomZone:GetName()))
+                local newStatic = spawn:SpawnFromCoordinate(randomZone:GetPointVec2(), nil, prefix)
+                newStatic:SetProperty("airbaseName", airbaseName)
+                newStatic:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+            end            
+        end
+    end
+
 end

@@ -4,6 +4,7 @@ env.info("Loading HC.AIRBASEINFO")
 AIRBASEINFO = {
     WPIndex = 99, --Waypoint index
     Name = nil, --Airbase name
+    IsActive = true, --Is airbase active - that is defense units have AI turned on
     HP = 100, --HP indicates the base overall operational capacity with 100% being 100% operational
     Coalition = coalition.side.NEUTRAL, --Current coalition
     MarkIdFriendly = nil, --Label MarkId on F10 Map for friendly players
@@ -45,6 +46,63 @@ function AIRBASEINFO:AddHP(resupplyPercent)
     self:DrawLabel()
 end
 
+--Checks if the base is far enough from any enemy units so defense units can be turned on to reduce CPU load
+function AIRBASEINFO:RecalculateActivityState()
+    if (self:ShouldDeactivate()) then
+        if (self.IsActive) then
+            self:SetDefenseUnitsActive(false)
+            self.IsActive = false
+            HC:T(string.format("Deactivating defense units for %s", self.Name))
+        end
+    else
+        if (not self.IsActive) then
+            self:SetDefenseUnitsActive(true)
+            self.IsActive = true
+            HC:T(string.format("Activating defense units for %s", self.Name))
+        end
+    end
+end
+
+--Checks if base units can be deactivated because there are no enemy units near by
+function AIRBASEINFO:ShouldDeactivate()
+    local airbase = AIRBASE:FindByName(self.Name)
+    local origin = airbase:GetCoordinate()
+    local enemySide = nil
+    if (airbase:GetCoalition() ~= coalition.side.RED) then
+        enemySide = "red"
+    elseif(airbase:GetCoalition() == coalition.side.BLUE) then
+        enemySide = "blue"
+    else
+        return false --neutral airbase
+    end
+    return HC:DistanceToClosestUnit(origin, enemySide)> HC.REAR_AREA_DISTANCE_THRESHOLD * 1000
+end
+
+--Activate or deactivate airbase defense units
+---@param state boolean #true to activate, false to deactivate
+function AIRBASEINFO:SetDefenseUnitsActive(state)
+    local airbase = AIRBASE:FindByName(self.Name)
+    local delay = 0
+    SET_UNIT:New():FilterZones({airbase.AirbaseZone}):FilterOnce():ForEachUnit(
+        function(unit)
+            if(unit:GetName():startswith(string.format("%s|| D", self.Name))) then
+                if (state) then
+                    HC:T(string.format("Activating defense unit %s for %s", unit:GetName(), self.Name))
+                    local mytimer = TIMER:New(unit.SetAIOn, unit)
+                    mytimer:Start(delay)
+                    --unit:SetAIOn()
+                else
+                    HC:T(string.format("Deativating defense unit %s for %s", unit:GetName(), self.Name))
+                    local mytimer = TIMER:New(unit.SetAIOff, unit)
+                    mytimer:Start(delay)
+                    --unit:SetAIOff()
+                end
+                delay = delay + 0.5
+            end
+        end
+    )
+end
+
 -- Draws airbase or FARP label on F10 map
 function AIRBASEINFO:DrawLabel()
     local BLUE_COLOR_FARP = {0.2,0.2,1}
@@ -60,9 +118,9 @@ function AIRBASEINFO:DrawLabel()
     local textSize = 12
     local ab = AIRBASE:FindByName(self.Name)
     local coord = ab:GetCoordinate()
-
+    local isAirbase = ab:GetCategory() == Airbase.Category.AIRDROME or #(ab.runways)>0
     --#region setting up style
-    if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+    if(not self:IsFrontline(ab) and isAirbase) then
         colorText = COLOR_MAIN_BASE_TEXT
     else
         colorText = COLOR_FARP_FRONTLINE_TEXT
@@ -74,7 +132,7 @@ function AIRBASEINFO:DrawLabel()
             colorFill = RED_COLOR_FARP
         end
     elseif (self.Coalition == coalition.side.BLUE) then
-        if(ab:GetCategory() == Airbase.Category.AIRDROME) then
+        if(isAirbase) then
             colorFill = BLUE_COLOR_AIRBASE
         else
             colorFill = BLUE_COLOR_FARP
@@ -83,7 +141,7 @@ function AIRBASEINFO:DrawLabel()
         colorFill = {1,1,1}
         colorText = {0.3,0.3,0.3}
     end
-    if(not self:IsFrontline(ab) and ab:GetCategory() == Airbase.Category.AIRDROME) then
+    if(not self:IsFrontline(ab) and isAirbase) then
         colorText = {1, 1, 0.5}
     end
     local HPIndicator =""
@@ -214,7 +272,7 @@ function AIRBASEINFO:IsFrontline()
     return HC:IsFrontlineAirbase(airbase)
 end
 
---Apply damage to airbase proportional to "value" of the unit lost
+--Apply damage to airbase proportional to "value" of the unit/static lost
 ---@param airbaseName string Airbase name
 ---@unit unit DCSUnit Destroyed unit related to airbase
 function AIRBASEINFO.ApplyAirbaseUnitLossPenalty(airbaseName, unit)
@@ -250,13 +308,46 @@ function AIRBASEINFO:GetGarrisonForHP(hp)
     elseif (hp > 40 and hp <= 60) then        
         garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 0 }
     elseif (hp > 60 and hp <= 80) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 0, EWR = 1 }
     elseif (hp > 80 and hp <= 90) then
-        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 1, EWR = 1 }
     elseif (hp > 90) then
-        garrison = { BASE = 1, SHORAD = 3, SAM = 2, EWR = 1 }
+        garrison = { BASE = 1, SHORAD = 2, SAM = 2, EWR = 1 }
     end
     return garrison
+end
+
+--Calculates required airbase statics
+---@return table #Statics table
+function AIRBASEINFO:GetRequiredStatics()
+    return AIRBASEINFO:GetRequiredStaticsForHP(self.HP)
+end    
+
+--Calculates statics table for given HP value
+---@param hp number HP value
+---@return table #Statics table
+function AIRBASEINFO:GetRequiredStaticsForHP(hp)
+    local statics = {
+        BARRACKS = true, -- Barracks
+        BUNKER = false, -- Fortified bunker
+        TOWER = false, -- Transmitter object
+        HQ = false -- Headquarters building
+    }
+
+    if (hp <= 20) then
+        statics = { BARRACKS = true, BUNKER = false, TOWER = true, HQ = false}
+    elseif (hp > 20 and hp <= 40) then
+        statics = { BARRACKS = true, BUNKER = false, TOWER = true, HQ = false}
+    elseif (hp > 40 and hp <= 60) then        
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = true}
+    elseif (hp > 60 and hp <= 80) then
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = false}
+    elseif (hp > 80 and hp <= 90) then
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = true}
+    elseif (hp > 90) then
+        statics = { BARRACKS = true, BUNKER = true, TOWER = true, HQ = false}
+    end
+    return statics
 end
 
 env.info("HC.AIRBASEINFO loaded")

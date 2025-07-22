@@ -24,5 +24,8 @@
     "Lua.completion.displayContext": 5,
     "Lua.runtime.version": "Lua 5.1",
     "Lua.completion.callSnippet": "Both",
+    "github.copilot.enable": {
+        "lua": true
+    },
     
 }
