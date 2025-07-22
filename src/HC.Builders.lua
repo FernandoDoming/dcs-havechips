@@ -416,9 +416,9 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             
         else
             --For regular airbases we have all mission types
-            for i=1, #(templates.CAP) do
-                local templateGroupName = templates.CAP[i]
-                local cohortName = string.format("%s|| Fighter Sq. %s %d", airbaseName, side, i)
+            --for i=1, #(templates.CAP) do
+                local templateGroupName = HC:GetRandomTemplates(side, "CAP", 1)[1]
+                local cohortName = string.format("%s|| Fighter Sq. %s", airbaseName, side)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
                     squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
@@ -432,10 +432,10 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                      
                 end              
-            end
-            for i=1, #(templates.CAS) do
-                local templateGroupName = templates.CAS[i]
-                local cohortName = string.format("%s|| Attack Sq. %s %d", airbaseName, side, i)
+            --end
+            --for i=1, #(templates.CAS) do
+                local templateGroupName = HC:GetRandomTemplates(side, "CAS", 1)[1]
+                local cohortName = string.format("%s|| Attack Sq. %s", airbaseName, side)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
                     squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
@@ -449,10 +449,10 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                 
                 end
-            end
-            for i=1, #(templates.STRIKE) do
-                local templateGroupName = templates.STRIKE[i]
-                local cohortName = string.format("%s|| Strike Sq. %s %d", airbaseName, side, i)
+            --end
+            --for i=1, #(templates.STRIKE) do
+                local templateGroupName = HC:GetRandomTemplates(side, "STRIKE", 1)[1]
+                local cohortName = string.format("%s|| Strike Sq. %s", airbaseName, side)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
                     squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
@@ -466,10 +466,10 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
                 end
-            end
-            for i=1, #(templates.SEAD) do
-                local templateGroupName = templates.SEAD[i]
-                local cohortName = string.format("%s|| SEAD Sq. %s %d", airbaseName, side, i)
+            --end
+            --for i=1, #(templates.SEAD) do
+                local templateGroupName = HC:GetRandomTemplates(side, "SEAD", 1)[1]
+                local cohortName = string.format("%s|| SEAD Sq. %s", airbaseName, side)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
                     squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
@@ -483,10 +483,10 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                    
                 end
-            end
-            for i=1, #(templates.AIRLIFT) do
-                local templateGroupName = templates.AIRLIFT[i]
-                local cohortName = string.format("%s|| Transport Sq. %s %d", airbaseName, side, i)
+            --end
+            --for i=1, #(templates.AIRLIFT) do
+                local templateGroupName = HC:GetRandomTemplates(side, "AIRLIFT", 1)[1]
+                local cohortName = string.format("%s|| Transport Sq. %s", airbaseName, side)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
                     squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
@@ -500,7 +500,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                    
                 end
-            end
+            --end
         end
     end    
     chief:AddAirwing(airwing) 

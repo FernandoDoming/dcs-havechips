@@ -1,7 +1,7 @@
 HC = {
     VERSION="0.1.3",
     TRACE = true, --enable or disable trace messages
-    DEBUG = false, --makes it easier to debug, e.g. AI will spawn in the air
+    DEBUG = true, --makes it easier to debug, e.g. AI will spawn in the air
     RED = { 
         TEMPLATES = {},
         INVENTORY_TEMPLATES = {
@@ -151,7 +151,7 @@ function HC:Start()
             --add AI units to base to be used by CHIEF
             
             
-            --HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
+            HC:SetupAirbaseChiefUnits(staticWarehouse, ab)
             
             
             --spawn base defense units
@@ -201,8 +201,8 @@ function HC:Start()
     -- Setup engagement ranges for AAA (non-advanced SAM units like Flaks etc) and if you want them to be AIOff
     --blinder:SetAAARanges(60,true) -- defaults are 60, and true
 
-    --HC.BLUE.CHIEF:__Start(1)
-    --HC.RED.CHIEF:__Start(1)
+    HC.BLUE.CHIEF:__Start(1)
+    HC.RED.CHIEF:__Start(1)
     HC:T("Startup completed")
 end
 
