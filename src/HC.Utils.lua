@@ -464,3 +464,23 @@ function HC.CalculateDamageForUnitLost(unit)
     end
 end
     
+
+--@param zone #ZONE_RADIUS
+--@param ObjectCategories A list of categories, which are members of Object.Category
+--@param EvaluateFunction
+function HC:SearchZone( zone, EvaluateFunction, ObjectCategories )
+  local zoneCoord = zone:GetCoordinate()
+  local zoneRadius = zone:GetRadius()
+  local sphereSearch = {
+    id = world.VolumeType.SPHERE,
+      params = {
+      point = zoneCoord:GetVec3(),
+      radius = zoneRadius,
+      }
+    }
+    local function EvaluateZone( obj, val )
+        env.info("Found something "..obj:getName().." radius "..tostring(zoneRadius))
+        return EvaluateFunction( obj )
+    end
+    world.searchObjects( ObjectCategories, sphereSearch, EvaluateZone )
+end

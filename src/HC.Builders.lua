@@ -255,10 +255,8 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     --check chief units, remove if legions already exist
     local brigadeName = string.format("%s Brigade %s", side, airbaseName)
     local airwingName = string.format("%s Air wing %s", side, airbaseName)
-    local airwingHeloName = string.format("%s Heli wing %s", side, airbaseName)
     local brigade = nil
     local airwing = nil
-    local airwingHelo = nil
     HC:T(string.format("[%s] Setting up CHIEF units", airbaseName))
     for _, legion in pairs(chief.commander.legions) do
         if (not brigade) then
@@ -271,12 +269,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 airwing = legion
             end
         end
-        if (not airwingHelo) then
-            if (legion:GetName() == airwingHeloName) then
-                airwingHelo = legion
-            end
-        end
-        if (brigade and airwing and airwingHelo) then
+        if (brigade and airwing) then
             break
         end
     end
@@ -285,9 +278,6 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     end
     if (not airwing) then
         airwing = AIRWING:New(warehouse:GetName(), airwingName)
-    end
-    if (not airwingHelo) then
-        airwingHelo = AIRWING:New(warehouse:GetName(), airwingHeloName)
     end
     HC:T(string.format("[%s] Setting up %s", airbaseName, brigadeName))
     --Ground units
@@ -339,13 +329,12 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
-
-    airwingHelo:SetTakeoffCold()
-    airwingHelo:SetDespawnAfterHolding(true)
-    airwingHelo:SetDespawnAfterLanding(true)
-    airwingHelo:SetAirbase(airbase)
-    airwingHelo:SetVerbosity(0) --set to 0 to prevent large number of trace messages in log
-    airwingHelo:SetRespawnAfterDestroyed(HC.WAREHOUSE_RESPAWN_INTERVAL) -- respawn if destroyed
+    airwing:SetTakeoffAir()
+    airwing:SetDespawnAfterHolding(true)
+    airwing:SetDespawnAfterLanding(true)
+    airwing:SetAirbase(airbase)
+    airwing:SetVerbosity(0) --set to 0 to prevent large number of trace messages in log
+    airwing:SetRespawnAfterDestroyed(HC.WAREHOUSE_RESPAWN_INTERVAL) -- respawn if destroyed
     
     for i=1, #(templates.TRANSPORT_HELI) do
         local templateGroupName = templates.TRANSPORT_HELI[i]
@@ -359,8 +348,8 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             squadron:SetMissionRange(60) -- Squadron will be considered for targets within 40 NM of its airwing location.
             --Time to get ready again, time to repair per life point taken
             squadron:SetTurnoverTime(10, 0) --maintenance time, repair time [minutes]
-            airwingHelo:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
-            airwingHelo:AddSquadron(squadron)
+            airwing:NewPayload(GROUP:FindByName(templates.TRANSPORT_HELI[i]), 20, HELI_TRANSPORT_TASKS) --20 sets of armament
+            airwing:AddSquadron(squadron)
             --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
             local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                
@@ -377,14 +366,13 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             squadron:SetGrouping(2)
             squadron:SetMissionRange(40)
             squadron:SetTurnoverTime(10, 0)
-            airwingHelo:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
-            airwingHelo:AddSquadron(squadron)
+            airwing:NewPayload(GROUP:FindByName(templates.ATTACK_HELI[i]), 20, {AUFTRAG.Type.CAS, AUFTRAG.Type.CASENHANCED}) --20 sets of armament), 20,  {AUFTRAG.Type.CAS}) --20 sets of armament
+            airwing:AddSquadron(squadron)
             --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
             local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
     end
-    chief:AddAirwing(airwingHelo)
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways)>0) then
         if (abi:IsFrontline()) then
