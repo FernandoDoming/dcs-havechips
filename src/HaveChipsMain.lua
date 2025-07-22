@@ -110,8 +110,8 @@ function HC:Start()
         if(success) then
             HC:T("Table loaded from file "..HC.BASE_PATH..filename)
             for i=1, #data do
-                HC:T(abi.Name)
                 local abi = AIRBASEINFO:NewFromTable(data[i])
+                HC:T(abi.Name)
                 HC.ActiveAirbases[data[i].Name] = abi
                 abi:DrawLabel()
             end

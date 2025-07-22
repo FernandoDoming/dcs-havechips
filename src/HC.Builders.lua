@@ -421,7 +421,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 local cohortName = string.format("%s|| Fighter Sq. %s %d", airbaseName, side, i)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                    squadron = SQUADRON:New(templates.CAP[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability(FIGHTER_TASKS, 90)
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(80)
@@ -438,12 +438,12 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 local cohortName = string.format("%s|| Attack Sq. %s %d", airbaseName, side, i)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                    squadron = SQUADRON:New(templates.CAS[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability(STRIKER_TASKS, 90)
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(80)
                     squadron:SetTurnoverTime(10, 0)
-                    airwing:NewPayload(GROUP:FindByName(templates.CAS[i]), 20, STRIKER_TASKS)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, STRIKER_TASKS)
                     airwing:AddSquadron(squadron)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
@@ -455,12 +455,12 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 local cohortName = string.format("%s|| Strike Sq. %s %d", airbaseName, side, i)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                    squadron = SQUADRON:New(templates.STRIKE[i], 2, cohortName) --Ops.Squadron#SQUADRON
+                    squadron = SQUADRON:New(templateGroupName, 2, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability(STRIKER_TASKS, 90)                
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(80)
                     squadron:SetTurnoverTime(10, 0)
-                    airwing:NewPayload(GROUP:FindByName(templates.STRIKE[i]), 20, STRIKER_TASKS)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, STRIKER_TASKS)
                     airwing:AddSquadron(squadron)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
@@ -472,12 +472,12 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                 local cohortName = string.format("%s|| SEAD Sq. %s %d", airbaseName, side, i)
                 local squadron = nil
                 if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
-                    squadron=SQUADRON:New(templates.SEAD[i], 1, cohortName) --Ops.Squadron#SQUADRON
+                    squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)                
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(120)
                     squadron:SetTurnoverTime(10, 0)
-                    airwing:NewPayload(GROUP:FindByName(templates.SEAD[i]), 20, {AUFTRAG.Type.SEAD})
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, {AUFTRAG.Type.SEAD})
                     airwing:AddSquadron(squadron)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
