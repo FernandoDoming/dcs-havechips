@@ -19,7 +19,8 @@ HC = {
     },
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
-    FRONTLINE_PROXIMITY_THRESHOLD = 50, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
+    FRONTLINE_PROXIMITY_THRESHOLD = 45, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
+    REAR_AREA_DISTANCE_THRESHOLD = 65, -- Distance in kilometers, if an airbase is further than this from nearest enemy airbase it is considered a rear area airbase
     TEMPLATE_CATEGORIES = {"SEAD", "CAP", "STRIKE", "CAS", "AIRLIFT", "STRATEGIC_BOMBER", "FRONTLINE_CAP", "SHORAD", "LIGHT_INFANTRY", "MECHANIZED", "TANK", "ATTACK_HELI", "TRANSPORT_HELI", "BASE_SECURITY", "SAM", "EWR"},
     ActiveAirbases = {},
     TIMERS = {

@@ -32,7 +32,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
     chief:SetLimitMission(8, "Total")
-    chief:SetStrategy(CHIEF.Strategy.AGGRESSIVE)
+    chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
     chief:SetTacticalOverviewOn() --for debugging
     chief:SetVerbosity(2) --set to 5 for debugging
     chief:SetDetectStatics(true)

@@ -20,12 +20,16 @@ HC:T("BASE RESUPPLY TICK START")
     local delay = 0
     for _, abi in pairs(HC.ActiveAirbases) do
         delay = delay + 0.5
-        abi:AddHP(resupplyPercent)
-        local mytimer = TIMER:New(AIRBASEINFO.AddHP, abi, abi.HP)
+        HC:T(string.format("[%s] Resupplying by %.2f%%", abi.Name, resupplyPercent))
+        local mytimer = TIMER:New(abi.AddHP, abi, resupplyPercent)
         mytimer:Start(delay)
+        delay = delay + 0.5
+        local mytimer2 = TIMER:New(abi.RecalculateActivityState, abi)
+        mytimer2:Start(delay + 0.5)
     end
 HC:T("BASE RESUPPLY TICK END")
 end
+
 
 --#endregion
 
@@ -49,10 +53,11 @@ function HC:OnEventKill(e)
     --  SCENERY 5
     --  Cargo   6
     
-    if (e and e.IniCategory and e.IniCoalition and e.IniTypeName and e.IniObjectCategory
-        and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtObjectCategory
+    if (e and e.IniCategory and e.IniCoalition and e.IniTypeName and e.IniUnit and e.IniObjectCategory
+        and e.TgtCategory and e.TgtCoalition and e.TgtTypeName and e.TgtDCSUnit and e.TgtObjectCategory
         and e.WeaponName) then
-        local BDA = string.format("%s %s destroyed %s %s with %s", UTILS.GetCoalitionName(e.IniCoalition), e.IniUnit:GetDesc().displayName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtDCSUnit:getDesc().displayName, e.weapon:getDesc().displayName)
+        local BDA = string.format("%s %s destroyed %s %s with %s", 
+        UTILS.GetCoalitionName(e.IniCoalition), e.IniUnit:GetDesc().displayName, UTILS.GetCoalitionName(e.TgtCoalition), e.TgtDCSUnit:getDesc().displayName, e.weapon:getDesc().displayName)
         MESSAGE:New(BDA, 10):ToAll() --for debugging purposes
         HC:T(BDA)        
     end
