@@ -287,7 +287,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
         if not UTILS.IsAnyInTable(_COHORTNAMES, cohortName) then
             platoon = PLATOON:New(templates.LIGHT_INFANTRY[i], 2, cohortName)
             platoon:SetGrouping(4)
-            platoon:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ONGUARD, AUFTRAG.Type.GROUNDATTACK }, 70)
+            platoon:AddMissionCapability({ AUFTRAG.Type.PATROLZONE, AUFTRAG.Type.ONGUARD }, 70)
             platoon:SetAttribute(GROUP.Attribute.GROUND_INFANTRY)
             --platoon:SetMissionRange(5)
             brigade:AddPlatoon(platoon)        
@@ -302,7 +302,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             platoon:AddMissionCapability({AUFTRAG.Type.OPSTRANSPORT, AUFTRAG.Type.PATROLZONE,  AUFTRAG.Type.CAPTUREZONE}, 80)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK}, 80)
             platoon:SetAttribute(GROUP.Attribute.GROUND_IFV)
-            platoon:SetMissionRange(25)
+            platoon:SetMissionRange(30)
             brigade:AddPlatoon(platoon)            
         end
     end
@@ -315,7 +315,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             platoon:AddMissionCapability({AUFTRAG.Type.GROUNDATTACK, AUFTRAG.Type.CONQUER, AUFTRAG.Type.ARMOREDGUARD, AUFTRAG.Type.ARMORATTACK,  AUFTRAG.Type.CAPTUREZONE}, 90)
             platoon:AddMissionCapability({AUFTRAG.Type.PATROLZONE}, 40)
             platoon:SetAttribute(GROUP.Attribute.GROUND_TANK)
-            platoon:SetMissionRange(25)
+            platoon:SetMissionRange(30)
             brigade:AddPlatoon(platoon)            
         end
     end
@@ -412,8 +412,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
                     airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)                 
-                end
-            
+                end            
         else
             --For regular airbases we have all mission types
             --for i=1, #(templates.CAP) do
@@ -475,7 +474,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability({AUFTRAG.Type.SEAD}, 90)                
                     squadron:SetGrouping(2)
-                    squadron:SetMissionRange(120)
+                    squadron:SetMissionRange(80)
                     squadron:SetTurnoverTime(10, 0)
                     airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, {AUFTRAG.Type.SEAD})
                     airwing:AddSquadron(squadron)
@@ -492,7 +491,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     squadron=SQUADRON:New(templateGroupName, 1, cohortName) --Ops.Squadron#SQUADRON
                     squadron:AddMissionCapability({AUFTRAG.Type.CARGOTRANSPORT}, 90)                
                     squadron:SetGrouping(1)
-                    squadron:SetMissionRange(120)
+                    squadron:SetMissionRange(200)
                     squadron:SetTurnoverTime(10, 0)
                     airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, {AUFTRAG.Type.CARGOTRANSPORT})
                     airwing:AddSquadron(squadron)
