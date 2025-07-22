@@ -1,6 +1,7 @@
 HC = {
-    VERSION="0.1.2",
+    VERSION="0.1.3",
     TRACE = true, --enable or disable trace messages
+    DEBUG = true, --makes it easier to debug, e.g. AI will spawn in the air
     RED = { 
         TEMPLATES = {},
         INVENTORY_TEMPLATES = {

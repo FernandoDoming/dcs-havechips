@@ -326,8 +326,11 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
-    --airwing:SetTakeoffHot()
-    airwing:SetTakeoffAir() --For quicker testing to not have to wait for AI to take off
+    if (HC.DEBUG) then
+        airwing:SetTakeoffAir()--For quicker testing to not have to wait for AI to take off
+    else
+        airwing:SetTakeoffHot()
+    end
     airwing:SetDespawnAfterHolding(true)
     airwing:SetDespawnAfterLanding(true)
     airwing:SetAirbase(airbase)
