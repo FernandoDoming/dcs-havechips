@@ -164,3 +164,9 @@ end
             MapCleaner.performCleanup()
         end
     end)           
+
+
+    --check out MOOSE functions
+    UTILS.SpawnMASHStatics
+    COORDINATE:GetSimpleZones
+    --Check if commander limits now work, there seems to be typo correction in current dev
