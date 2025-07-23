@@ -91,3 +91,23 @@ function HC:GetChiefZoneResponse(chief)
         --return resourceEmpty, resourceOccupied
         return resourceEmpty, {}
 end
+
+function DoSEAD(zone)
+    local DCStasks = {}
+    local auftragSEAD = AUFTRAG:NewSEAD(zone, 2000)
+    auftragSEAD.engageZone:Scan({Object.Category.UNIT},{Unit.Category.GROUND_UNIT})
+    local ScanUnitSet = auftragSEAD.engageZone:GetScannedSetUnit()
+    local SeadUnitSet = SET_UNIT:New()
+    for _,_unit in pairs (ScanUnitSet.Set) do
+        local unit = _unit -- Wrapper.Unit#UNTI
+        if unit and unit:IsAlive() and unit:HasSEAD() then
+            HC:T("Adding UNIT for SEAD: "..unit:GetName())
+            local task = 
+            CONTROLLABLE.TaskAttackUnit(nil,unit,GroupAttack,AI.Task.WeaponExpend.ALL,1,Direction,self.engageAltitude,ENUMS.WeaponType.Missile.AnyAutonomousMissile)          
+            table.insert(DCStasks, task)
+            SeadUnitSet:AddUnit(unit)
+        end
+    end
+    auftragSEAD.engageTarget = TARGET:New(SeadUnitSet)
+
+end    
