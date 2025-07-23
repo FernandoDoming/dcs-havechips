@@ -1,5 +1,5 @@
 HC = {
-    VERSION="0.1.4",
+    VERSION="0.1.5",
     TRACE = true, --enable or disable trace messages
     DEBUG = true, --makes it easier to debug, e.g. AI will spawn in the air
     RED = { 
