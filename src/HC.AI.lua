@@ -77,15 +77,37 @@ function HC:GetChiefZoneResponse(chief)
         --local resourceEmpty, emptyIFV = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
 
 
-        --local resourceOccupied, armor = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
-        --chief:AddToResource(resourceOccupied, AUFTRAG.Type.GROUNDESCORT, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
-        --chief:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1)
+        -- local resourceOccupied, armor = chief:CreateResource(AUFTRAG.Type.PATROLZONE, 1, 1, GROUP.Attribute.GROUND_IFV)
+        -- chief:AddToResource(resourceOccupied, AUFTRAG.Type.GROUNDESCORT, 1, 1, GROUP.Attribute.AIR_ATTACKHELO)
+        -- chief:AddToResource(resourceOccupied, AUFTRAG.Type.CASENHANCED, 1, 1)
         -- local assaultInf = chief:AddToResource(resourceOccupied, AUFTRAG.Type.ONGUARD, 1, 1)
         -- chief:AddTransportToResource(assaultInf, 1, 1, GROUP.Attribute.GROUND_IFV)
         
 
+        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
         local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
         chief:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
         return resourceEmpty, resourceOccupied
+        --return resourceEmpty, {}
 end
+
+function DoSEAD(zone)
+    local DCStasks = {}
+    local auftragSEAD = AUFTRAG:NewSEAD(zone, 2000)
+    auftragSEAD.engageZone:Scan({Object.Category.UNIT},{Unit.Category.GROUND_UNIT})
+    local ScanUnitSet = auftragSEAD.engageZone:GetScannedSetUnit()
+    local SeadUnitSet = SET_UNIT:New()
+    for _,_unit in pairs (ScanUnitSet.Set) do
+        local unit = _unit -- Wrapper.Unit#UNTI
+        if unit and unit:IsAlive() and unit:HasSEAD() then
+            HC:T("Adding UNIT for SEAD: "..unit:GetName())
+            local task = 
+            CONTROLLABLE.TaskAttackUnit(nil,unit,GroupAttack,AI.Task.WeaponExpend.ALL,1,Direction,self.engageAltitude,ENUMS.WeaponType.Missile.AnyAutonomousMissile)          
+            table.insert(DCStasks, task)
+            SeadUnitSet:AddUnit(unit)
+        end
+    end
+    auftragSEAD.engageTarget = TARGET:New(SeadUnitSet)
+
+end    

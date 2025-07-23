@@ -770,9 +770,34 @@ function HC:SetupAirbaseStatics(airbaseName)
                 childZonesSet:RemoveZonesByName(randomZone:GetName())
                 HC.OccupiedSpawnZones[randomZone:GetName()] = true
                 HC:T(string.format("[%s] Spawning static %s at [%s]", airbaseName, prefix, randomZone:GetName()))
-                local newStatic = spawn:SpawnFromCoordinate(randomZone:GetPointVec2(), nil, prefix)
-                newStatic:SetProperty("airbaseName", airbaseName)
-                newStatic:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                if (name == "BARRACKS") then
+                    --we will spawn barracks in groups of 4
+                    local heading = 0 --maybe find farp or runway heading and align barracks for aesthetics
+                    local offsetA = 20 --offset in object heading direction
+                    local offsetB = 50 --offset peripendicular to object heading
+                    
+                    local pos = randomZone:GetCoordinate()
+                    local pos1 = pos:Translate(  offsetA,heading):Translate(offsetB, heading + 90)
+                    local pos2 = pos:Translate(  offsetA,heading):Translate(offsetB, heading - 90)
+                    local pos3 = pos:Translate(- offsetA,heading):Translate(offsetB, heading - 90)
+                    local pos4 = pos:Translate(- offsetA,heading):Translate(offsetB, heading + 90)
+                    local barracks1 = spawn:SpawnFromCoordinate(pos1, heading, prefix.." 1")
+                    local barracks2 = spawn:SpawnFromCoordinate(pos2, heading, prefix.." 2")
+                    local barracks3 = spawn:SpawnFromCoordinate(pos3, heading - 180, prefix.." 3")
+                    local barracks4 = spawn:SpawnFromCoordinate(pos4, heading -180, prefix.." 4")
+                    barracks1:SetProperty("airbaseName", airbaseName)
+                    barracks2:SetProperty("airbaseName", airbaseName)
+                    barracks3:SetProperty("airbaseName", airbaseName)
+                    barracks4:SetProperty("airbaseName", airbaseName)
+                    barracks1:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                    barracks2:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                    barracks3:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                    barracks4:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                else
+                    local newStatic = spawn:SpawnFromCoordinate(randomZone:GetPointVec2(), nil, prefix)
+                    newStatic:SetProperty("airbaseName", airbaseName)
+                    newStatic:SetProperty("damageWhenLost", HC.AIRBASE_DAMAGE_PER_UNIT_TYPE_LOST[name] or 1)
+                end
             end            
         end
     end
