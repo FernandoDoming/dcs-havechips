@@ -785,7 +785,7 @@ function HC:SetupAirbaseStatics(airbaseName)
                 if (name == "BARRACKS") then
                     --we will spawn barracks in groups of 4
                     local heading = 0 --maybe find farp or runway heading and align barracks for aesthetics
-                    local offsetA = 50 --offset in object heading direction
+                    local offsetA = 20 --offset in object heading direction
                     local offsetB = 50 --offset peripendicular to object heading
                     
                     local pos = randomZone:GetCoordinate()
@@ -795,8 +795,8 @@ function HC:SetupAirbaseStatics(airbaseName)
                     local pos4 = pos:Translate(- offsetA,heading):Translate(offsetB, heading + 90)
                     local barracks1 = spawn:SpawnFromCoordinate(pos1, heading, prefix.." 1")
                     local barracks2 = spawn:SpawnFromCoordinate(pos2, heading, prefix.." 2")
-                    local barracks3 = spawn:SpawnFromCoordinate(pos3, heading, prefix.." 3")
-                    local barracks4 = spawn:SpawnFromCoordinate(pos4, heading, prefix.." 4")
+                    local barracks3 = spawn:SpawnFromCoordinate(pos3, heading - 180, prefix.." 3")
+                    local barracks4 = spawn:SpawnFromCoordinate(pos4, heading -180, prefix.." 4")
                     barracks1:SetProperty("airbaseName", airbaseName)
                     barracks2:SetProperty("airbaseName", airbaseName)
                     barracks3:SetProperty("airbaseName", airbaseName)
