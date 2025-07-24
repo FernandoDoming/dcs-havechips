@@ -38,7 +38,8 @@ end
 
 function HC:L(severity, message)
     if (HC.HAVECHIPS_LOG_FILE) then
-        local t = timer.getAbsTime() - timer.getTime0()
+        --local t = timer.getAbsTime() - timer.getTime0()
+        local t =  timer.getTime()
         local hours = math.floor(t / 3600)
         local minutes = math.floor((t - hours * 3600 ) / 60)
         local seconds = math.floor(t  - hours * 3600 - minutes * 60)

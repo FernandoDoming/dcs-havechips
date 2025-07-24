@@ -121,9 +121,10 @@ function DoCaptureZone(chief, zone)
         local zone = OPSZONE:FindByName("Hama")
         local resourceCapture, specops = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
         chief:AddTransportToResource(specops, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
-        local mission = AUFTRAG:NewPATROLZone(zone, nil, nil)
+        local mission = AUFTRAG:NewPATROLZONE(zone, nil, nil)
         local isRecruited, assets, legions = chief.commander:RecruitAssetsForMission(mission)
-        UTILS.PrintTableToLog(assets)
-        UTILS.PrintTableToLog(legions)
+        --UTILS.PrintTableToLog(assets)
+        --UTILS.PrintTableToLog(legions)
+        env.info("Do capture")
 
 end
