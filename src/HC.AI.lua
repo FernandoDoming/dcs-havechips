@@ -84,7 +84,7 @@ function HC:GetChiefZoneResponse(chief)
         -- chief:AddTransportToResource(assaultInf, 1, 1, GROUP.Attribute.GROUND_IFV)
         
 
-        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
+        --local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
         local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
         chief:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
@@ -92,7 +92,11 @@ function HC:GetChiefZoneResponse(chief)
         --return resourceEmpty, {}
 end
 
-function DoSEAD(zone)
+function DoSEAD(chief, zone)
+    local resource = 
+    chief:RecruitAssetsForZone(zone, Resource)
+
+
     local DCStasks = {}
     local auftragSEAD = AUFTRAG:NewSEAD(zone, 2000)
     auftragSEAD.engageZone:Scan({Object.Category.UNIT},{Unit.Category.GROUND_UNIT})
@@ -111,3 +115,15 @@ function DoSEAD(zone)
     auftragSEAD.engageTarget = TARGET:New(SeadUnitSet)
 
 end    
+
+function DoCaptureZone(chief, zone)
+        local chief = HC.BLUE.CHIEF
+        local zone = OPSZONE:FindByName("Hama")
+        local resourceCapture, specops = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
+        chief:AddTransportToResource(specops, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
+        local mission = AUFTRAG:NewPATROLZone(zone, nil, nil)
+        local isRecruited, assets, legions = chief.commander:RecruitAssetsForMission(mission)
+        UTILS.PrintTableToLog(assets)
+        UTILS.PrintTableToLog(legions)
+
+end

@@ -173,63 +173,63 @@ end
 
 
     -- ## Example 14: Strategic Bombing
---
+
 -- This example shows how to employ strategic bombers in a mission. Three B-52s are launched at Kobuleti with the assignment to wipe out the enemy warehouse at Sukhumi.
 -- The bombers will get a flight path and make their approach from the South at an altitude of 5000 m ASL. After their bombing run, they will return to Kobuleti and
 -- added back to stock.
---
---     -- Start warehouses
---     warehouse.Kobuleti:Start()
---     warehouse.Sukhumi:Start()
---
---     -- Add a strategic bomber assets
---     warehouse.Kobuleti:AddAsset("B-52H", 3)
---
---     -- Request bombers for specific task of bombing Sukhumi warehouse.
---     warehouse.Kobuleti:AddRequest(warehouse.Kobuleti, WAREHOUSE.Descriptor.ATTRIBUTE, WAREHOUSE.Attribute.AIR_BOMBER, WAREHOUSE.Quantity.ALL, nil, nil, nil, "Bomb Sukhumi")
---
---     -- Specify assignment after bombers have been spawned.
---     function warehouse.Kobuleti:OnAfterSelfRequest(From, Event, To, groupset, request)
---       local groupset=groupset --Core.Set#SET_GROUP
---
---       -- Get assignment of this request.
---       local assignment=warehouse.Kobuleti:GetAssignment(request)
---
---       if assignment=="Bomb Sukhumi" then
---
---         for _,_group in pairs(groupset:GetSet()) do
---           local group=_group --Wrapper.Group#GROUP
---
---           -- Start uncontrolled aircraft.
---           group:StartUncontrolled()
---
---           -- Target coordinate!
---           local ToCoord=warehouse.Sukhumi:GetCoordinate():SetAltitude(5000)
---
---           -- Home coordinate.
---           local HomeCoord=warehouse.Kobuleti:GetCoordinate():SetAltitude(3000)
---
---           -- Task bomb Sukhumi warehouse using all bombs (2032) from direction 180 at altitude 5000 m.
---           local task=group:TaskBombing(warehouse.Sukhumi:GetCoordinate():GetVec2(), false, "All", nil , 180, 5000, 2032)
---
---           -- Define waypoints.
---           local WayPoints={}
---
---           -- Take off position.
---           WayPoints[1]=warehouse.Kobuleti:GetCoordinate():WaypointAirTakeOffParking()
---           -- Begin bombing run 20 km south of target.
---           WayPoints[2]=ToCoord:Translate(20*1000, 180):WaypointAirTurningPoint(nil, 600, {task}, "Bombing Run")
---           -- Return to base.
---           WayPoints[3]=HomeCoord:WaypointAirTurningPoint()
---           -- Land at homebase. Bombers are added back to stock and can be employed in later assignments.
---           WayPoints[4]=warehouse.Kobuleti:GetCoordinate():WaypointAirLanding()
---
---           -- Route bombers.
---           group:Route(WayPoints)
---         end
---
---       end
---     end
+
+    -- Start warehouses
+    warehouse.Kobuleti:Start()
+    warehouse.Sukhumi:Start()
+
+    -- Add a strategic bomber assets
+    warehouse.Kobuleti:AddAsset("B-52H", 3)
+
+    -- Request bombers for specific task of bombing Sukhumi warehouse.
+    warehouse.Kobuleti:AddRequest(warehouse.Kobuleti, WAREHOUSE.Descriptor.ATTRIBUTE, WAREHOUSE.Attribute.AIR_BOMBER, WAREHOUSE.Quantity.ALL, nil, nil, nil, "Bomb Sukhumi")
+
+    -- Specify assignment after bombers have been spawned.
+    function warehouse.Kobuleti:OnAfterSelfRequest(From, Event, To, groupset, request)
+      local groupset=groupset --Core.Set#SET_GROUP
+
+      -- Get assignment of this request.
+      local assignment=warehouse.Kobuleti:GetAssignment(request)
+
+      if assignment=="Bomb Sukhumi" then
+
+        for _,_group in pairs(groupset:GetSet()) do
+          local group=_group --Wrapper.Group#GROUP
+
+          -- Start uncontrolled aircraft.
+          group:StartUncontrolled()
+
+          -- Target coordinate!
+          local ToCoord=warehouse.Sukhumi:GetCoordinate():SetAltitude(5000)
+
+          -- Home coordinate.
+          local HomeCoord=warehouse.Kobuleti:GetCoordinate():SetAltitude(3000)
+
+          -- Task bomb Sukhumi warehouse using all bombs (2032) from direction 180 at altitude 5000 m.
+          local task=group:TaskBombing(warehouse.Sukhumi:GetCoordinate():GetVec2(), false, "All", nil , 180, 5000, 2032)
+
+          -- Define waypoints.
+          local WayPoints={}
+
+          -- Take off position.
+          WayPoints[1]=warehouse.Kobuleti:GetCoordinate():WaypointAirTakeOffParking()
+          -- Begin bombing run 20 km south of target.
+          WayPoints[2]=ToCoord:Translate(20*1000, 180):WaypointAirTurningPoint(nil, 600, {task}, "Bombing Run")
+          -- Return to base.
+          WayPoints[3]=HomeCoord:WaypointAirTurningPoint()
+          -- Land at homebase. Bombers are added back to stock and can be employed in later assignments.
+          WayPoints[4]=warehouse.Kobuleti:GetCoordinate():WaypointAirLanding()
+
+          -- Route bombers.
+          group:Route(WayPoints)
+        end
+
+      end
+    end
 
 --find it in auftrag, this is the part of function that creates mission waypoint
 waypointcoord=coord:GetIntermediateCoordinate(self:GetTargetCoordinate(), self.missionFraction)

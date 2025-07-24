@@ -27,5 +27,10 @@
     "github.copilot.enable": {
         "lua": true
     },
-    
+    "logViewer.watch": [        
+            {
+            "title": "DCS WORLD",
+            "pattern": "C:\\Users\\tgudelj\\Saved Games\\DCS\\Log\\dcs.log"
+            }        
+    ]
 }

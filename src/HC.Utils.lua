@@ -1,29 +1,52 @@
+function get_fmt_time()
+    -- local now = os.time()     ---  NO milliseconds
+    local now = socket.gettime() --- Has milliseconds
+    local date_str = os.date('%F %T', now)
+    local millis = math.floor((now % 1) * 1000)
+    return string.format('%s.%03d', date_str, millis)
+end
+
 --Write trace message to log
 ---@param message string message text
 function HC:T(message)
     if (HC.TRACE) then
-        env.info("[HaveChips] "..message)        
+        env.info("[HaveChips] "..message)                
     end
+    HC:L("TRACE  ", message)
 end
 
 --Write info message to log
 ---@param message string message text
 function HC:I(message)
     env.info("[HaveChips] "..message)
+    HC:L("INFO   ", message)
 end
 
 --Write warning message to log
 ---@param message string message text
 function HC:W(message)
     env.warning("[HaveChips] "..message)
+    HC:L("WARNING", message)
 end
 
 --Write error message to log
 ---@param message string message text
 function HC:E(message)
     env.error("[HaveChips] "..message)
+    HC:L("ERROR  ", message)
 end
 
+function HC:L(severity, message)
+    if (HC.HAVECHIPS_LOG_FILE) then
+        local t = timer.getAbsTime() - timer.getTime0()
+        local hours = math.floor(t / 3600)
+        local minutes = math.floor((t - hours * 3600 ) / 60)
+        local seconds = math.floor(t  - hours * 3600 - minutes * 60)
+        local millis = math.floor((t - math.floor(t)) * 1000)
+        --HC.HAVECHIPS_LOG_FILE:write(string.format("%s %s %s\n", os.date("%Y-%m-%d %H:%M:%S"), severity, message))
+        HC.HAVECHIPS_LOG_FILE:write(string.format("%02d:%02d:%02d.%03d %s %s\n", hours, minutes, seconds, millis, severity, message))
+    end
+end
 function string:startswith(start)
     return self:sub(1, #start) == start
 end

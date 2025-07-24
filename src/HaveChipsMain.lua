@@ -18,6 +18,8 @@ HC = {
             FARP = nil
         }
     },
+    HAVECHIPS_LOG_PATH = lfs.writedir().."Logs\\HaveChips.log", --log file name
+    HAVECHIPS_LOG_FILE = nil,
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
     FRONTLINE_PROXIMITY_THRESHOLD = 60, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
@@ -57,6 +59,15 @@ env.info(string.format("HaveChips %s loading ", HC.VERSION))
 --This is the main entry point to HC
 function HC:Start()
     HC:T("Starting HaveChips "..HC.VERSION)
+    if (HC.HAVECHIPS_LOG_PATH ~= nil) then
+        HC.HAVECHIPS_LOG_FILE = io.open(HC.HAVECHIPS_LOG_PATH, "w")
+        HC.HAVECHIPS_LOG_FILE:write("\n")
+        HC.HAVECHIPS_LOG_FILE:close()
+        HC.HAVECHIPS_LOG_FILE = io.open(HC.HAVECHIPS_LOG_PATH, "a")
+        HC.HAVECHIPS_LOG_FILE:write("HaveChips "..HC.VERSION.." started at "..os.date().."\n")
+    end
+
+
     --Initialize group templates, we will need them later
     HC:InitGroupTemplates()
     --Create MOOSE CHIEFS, we will need them later
