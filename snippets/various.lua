@@ -173,64 +173,135 @@ end
 
 
     -- ## Example 14: Strategic Bombing
---
+
 -- This example shows how to employ strategic bombers in a mission. Three B-52s are launched at Kobuleti with the assignment to wipe out the enemy warehouse at Sukhumi.
 -- The bombers will get a flight path and make their approach from the South at an altitude of 5000 m ASL. After their bombing run, they will return to Kobuleti and
 -- added back to stock.
---
---     -- Start warehouses
---     warehouse.Kobuleti:Start()
---     warehouse.Sukhumi:Start()
---
---     -- Add a strategic bomber assets
---     warehouse.Kobuleti:AddAsset("B-52H", 3)
---
---     -- Request bombers for specific task of bombing Sukhumi warehouse.
---     warehouse.Kobuleti:AddRequest(warehouse.Kobuleti, WAREHOUSE.Descriptor.ATTRIBUTE, WAREHOUSE.Attribute.AIR_BOMBER, WAREHOUSE.Quantity.ALL, nil, nil, nil, "Bomb Sukhumi")
---
---     -- Specify assignment after bombers have been spawned.
---     function warehouse.Kobuleti:OnAfterSelfRequest(From, Event, To, groupset, request)
---       local groupset=groupset --Core.Set#SET_GROUP
---
---       -- Get assignment of this request.
---       local assignment=warehouse.Kobuleti:GetAssignment(request)
---
---       if assignment=="Bomb Sukhumi" then
---
---         for _,_group in pairs(groupset:GetSet()) do
---           local group=_group --Wrapper.Group#GROUP
---
---           -- Start uncontrolled aircraft.
---           group:StartUncontrolled()
---
---           -- Target coordinate!
---           local ToCoord=warehouse.Sukhumi:GetCoordinate():SetAltitude(5000)
---
---           -- Home coordinate.
---           local HomeCoord=warehouse.Kobuleti:GetCoordinate():SetAltitude(3000)
---
---           -- Task bomb Sukhumi warehouse using all bombs (2032) from direction 180 at altitude 5000 m.
---           local task=group:TaskBombing(warehouse.Sukhumi:GetCoordinate():GetVec2(), false, "All", nil , 180, 5000, 2032)
---
---           -- Define waypoints.
---           local WayPoints={}
---
---           -- Take off position.
---           WayPoints[1]=warehouse.Kobuleti:GetCoordinate():WaypointAirTakeOffParking()
---           -- Begin bombing run 20 km south of target.
---           WayPoints[2]=ToCoord:Translate(20*1000, 180):WaypointAirTurningPoint(nil, 600, {task}, "Bombing Run")
---           -- Return to base.
---           WayPoints[3]=HomeCoord:WaypointAirTurningPoint()
---           -- Land at homebase. Bombers are added back to stock and can be employed in later assignments.
---           WayPoints[4]=warehouse.Kobuleti:GetCoordinate():WaypointAirLanding()
---
---           -- Route bombers.
---           group:Route(WayPoints)
---         end
---
---       end
---     end
+
+    -- Start warehouses
+    warehouse.Kobuleti:Start()
+    warehouse.Sukhumi:Start()
+
+    -- Add a strategic bomber assets
+    warehouse.Kobuleti:AddAsset("B-52H", 3)
+
+    -- Request bombers for specific task of bombing Sukhumi warehouse.
+    warehouse.Kobuleti:AddRequest(warehouse.Kobuleti, WAREHOUSE.Descriptor.ATTRIBUTE, WAREHOUSE.Attribute.AIR_BOMBER, WAREHOUSE.Quantity.ALL, nil, nil, nil, "Bomb Sukhumi")
+
+    -- Specify assignment after bombers have been spawned.
+    function warehouse.Kobuleti:OnAfterSelfRequest(From, Event, To, groupset, request)
+      local groupset=groupset --Core.Set#SET_GROUP
+
+      -- Get assignment of this request.
+      local assignment=warehouse.Kobuleti:GetAssignment(request)
+
+      if assignment=="Bomb Sukhumi" then
+
+        for _,_group in pairs(groupset:GetSet()) do
+          local group=_group --Wrapper.Group#GROUP
+
+          -- Start uncontrolled aircraft.
+          group:StartUncontrolled()
+
+          -- Target coordinate!
+          local ToCoord=warehouse.Sukhumi:GetCoordinate():SetAltitude(5000)
+
+          -- Home coordinate.
+          local HomeCoord=warehouse.Kobuleti:GetCoordinate():SetAltitude(3000)
+
+          -- Task bomb Sukhumi warehouse using all bombs (2032) from direction 180 at altitude 5000 m.
+          local task=group:TaskBombing(warehouse.Sukhumi:GetCoordinate():GetVec2(), false, "All", nil , 180, 5000, 2032)
+
+          -- Define waypoints.
+          local WayPoints={}
+
+          -- Take off position.
+          WayPoints[1]=warehouse.Kobuleti:GetCoordinate():WaypointAirTakeOffParking()
+          -- Begin bombing run 20 km south of target.
+          WayPoints[2]=ToCoord:Translate(20*1000, 180):WaypointAirTurningPoint(nil, 600, {task}, "Bombing Run")
+          -- Return to base.
+          WayPoints[3]=HomeCoord:WaypointAirTurningPoint()
+          -- Land at homebase. Bombers are added back to stock and can be employed in later assignments.
+          WayPoints[4]=warehouse.Kobuleti:GetCoordinate():WaypointAirLanding()
+
+          -- Route bombers.
+          group:Route(WayPoints)
+        end
+
+      end
+    end
 
 --find it in auftrag, this is the part of function that creates mission waypoint
 waypointcoord=coord:GetIntermediateCoordinate(self:GetTargetCoordinate(), self.missionFraction)
 
+BASE:TraceOn()
+BASE:TraceLevel(2)
+BASE:TraceClass("LEGION")
+BASE:TraceClass("COMMANDER")
+BASE:TraceClass("COHORT")
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+local BombMission = AUFTRAG:NewCASENHANCED(targetZone,25000,550,15,nil,{"Helicopters","Ground Units","Air Defence"})
+--local BombMission = AUFTRAG:NewBAI(BomberTargets,25000)
+    BomberGroup:AddMission(BombMission)
+    BombMission.missionFraction=0.65
+    BombMission:SetWeaponExpend(AI.Task.WeaponExpend.ALL)
+    BombMission:SetMissionSpeed(550)
+    BombMission:SetMissionAltitude(25000)
+    
+    function BombMission:OnAfterExecuting(From, Event, To)
+    BombMission:SetROE(1)
+    BombMission:SetEngageDetected(15)
+    BombMission:SetEngageAsGroup(false)
+    BombMission:SetMissionSpeed(450)
+    end
+    function BombMission:OnAfterSuccess(From, Event, To)
+        if setStaticBomber:Count() < 0 then
+        Trigger.action.outTextForCoalition(2, "Bomber Group has successfully completed its mission", 15)
+        end
+    end
+    if setStaticBomber:Count() > 0 then
+        local auftragstatic = AUFTRAG:NewBAI(setStaticBomber, 25000)
+        auftragstatic:SetWeaponExpend(AI.Task.WeaponExpend.ONE)
+        auftragstatic:SetEngageAsGroup(false)
+        auftragstatic:SetMissionSpeed(600)
+        BomberGroup:AddMission(auftragstatic)
+        function auftragstatic:OnAfterExecuting(From, Event, To)
+        BomberGroup:SwitchROE(1)
+        auftragstatic:SetFormation(131075)
+        auftragstatic:SetMissionSpeed(380)
+        end
+        function auftragstatic:OnAfterSuccess(From, Event, To)
+            if setStaticBomber:Count() > 0 then
+            Trigger.action.outTextForCoalition(2, "Bomber Group has successfully completed its mission", 15)
+            end
+        end
+    end
+
+    function BomberGroup:OnAfterLanded(From, Event, To)
+        self:ScheduleOnce(5, function() self:Destroy() end)
+    end
+    function BomberGroup:OnAfterOutOfMissilesAG(From, Event, To)
+        trigger.action.outTextForCoalition(2, "Bomber Group is now RTB", 15)
+    end
+    function BomberGroup:OnAfterDead(From, Event, To)
+        local landed = (From=="Landed") or (From=="Arrived")
+        _DATABASE.FLIGHTGROUPS[BomberGroup.groupname] = nil
+        BomberGroup  = nil
+        bomberActive = false
+        buildCapControlMenu()
+        if landed then
+            trigger.action.outTextForCoalition(2, "Bomber Group have landed", 15)
+        else
+            trigger.action.outTextForCoalition(2, "Bomber Group have been killed", 15)
+        end
+    end
+    trigger.action.outTextForCoalition(2, "Bomber flight launched from " .. zoneName .. " to attack " .. targetZoneName, 15)
+  end, g, timer.getTime() + 1)
+    bomberActive = true
+    buildCapControlMenu()
+    bombSpawnIndex = bombSpawnIndex + 1
+end
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -15,6 +15,7 @@ function HC:CreateChief(side, alias)
     local chief = CHIEF:New(string.lower(side), agents, alias)
 
     --Limit the number of concurrent missions (although it doesn't seem to work in current MOOSE build)
+    chief:SetLimitMission(1, AUFTRAG.Type.AWACS)
     chief:SetLimitMission(1, AUFTRAG.Type.CAP)
     chief:SetLimitMission(2, AUFTRAG.Type.GROUNDATTACK)
     chief:SetLimitMission(2, AUFTRAG.Type.INTERCEPT)
@@ -31,7 +32,7 @@ function HC:CreateChief(side, alias)
     chief:SetLimitMission(2, AUFTRAG.Type.CONQUER)
     chief:SetLimitMission(6, AUFTRAG.Type.CAPTUREZONE)
     chief:SetLimitMission(2, AUFTRAG.Type.OPSTRANSPORT)
-    chief:SetLimitMission(8, "Total")
+    chief:SetLimitMission(12, "Total")
     chief:SetStrategy(CHIEF.Strategy.TOTALWAR)
 
     if (HC.DEBUG) then
@@ -84,7 +85,7 @@ function HC:GetChiefZoneResponse(chief)
         -- chief:AddTransportToResource(assaultInf, 1, 1, GROUP.Attribute.GROUND_IFV)
         
 
-        local resourceEmpty, emptyInfantry = HC.BLUE.CHIEF:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
+        --local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 2, 4, GROUP.Attribute.GROUND_INFANTRY)
         local resourceEmpty, emptyInfantry = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
         chief:AddTransportToResource(emptyInfantry, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
 
@@ -92,7 +93,11 @@ function HC:GetChiefZoneResponse(chief)
         --return resourceEmpty, {}
 end
 
-function DoSEAD(zone)
+function HC:DoSEAD(chief, zone)
+    local resource = 
+    chief:RecruitAssetsForZone(zone, Resource)
+
+
     local DCStasks = {}
     local auftragSEAD = AUFTRAG:NewSEAD(zone, 2000)
     auftragSEAD.engageZone:Scan({Object.Category.UNIT},{Unit.Category.GROUND_UNIT})
@@ -100,14 +105,30 @@ function DoSEAD(zone)
     local SeadUnitSet = SET_UNIT:New()
     for _,_unit in pairs (ScanUnitSet.Set) do
         local unit = _unit -- Wrapper.Unit#UNTI
+        --
         if unit and unit:IsAlive() and unit:HasSEAD() then
+            --if unit:HasAttribute("SAM TR") or unit:HasAttribute("SAM SR") or unit:HasAttribute("Air Defence")
             HC:T("Adding UNIT for SEAD: "..unit:GetName())
             local task = 
-            CONTROLLABLE.TaskAttackUnit(nil,unit,GroupAttack,AI.Task.WeaponExpend.ALL,1,Direction,self.engageAltitude,ENUMS.WeaponType.Missile.AnyAutonomousMissile)          
+            CONTROLLABLE.TaskAttackUnit(nil,unit,GroupAttack,AI.Task.WeaponExpend.ONE,1,Direction,self.engageAltitude,ENUMS.WeaponType.Missile.AnyAutonomousMissile)          
             table.insert(DCStasks, task)
             SeadUnitSet:AddUnit(unit)
         end
     end
     auftragSEAD.engageTarget = TARGET:New(SeadUnitSet)
+    auftragSEAD:AssignEscortLegion(chief)
 
 end    
+
+function HC:DoCaptureZone(chief, zone)
+        local chief = HC.BLUE.CHIEF
+        local zone = OPSZONE:FindByName("Hama")
+        local resourceCapture, specops = chief:CreateResource(AUFTRAG.Type.ONGUARD, 1, 1, GROUP.Attribute.GROUND_INFANTRY)
+        chief:AddTransportToResource(specops, 1, 1, {GROUP.Attribute.AIR_TRANSPORTHELO})
+        local mission = AUFTRAG:NewPATROLZONE(zone, nil, nil)
+        local isRecruited, assets, legions = chief.commander:RecruitAssetsForMission(mission)
+        --UTILS.PrintTableToLog(assets)
+        --UTILS.PrintTableToLog(legions)
+        env.info("Do capture")
+
+end

@@ -18,6 +18,8 @@ HC = {
             FARP = nil
         }
     },
+    HAVECHIPS_LOG_PATH = nil, --lfs.writedir().."Logs\\HaveChips.log", --log file name
+    HAVECHIPS_LOG_FILE = nil,
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to
     FRONTLINE_PROXIMITY_THRESHOLD = 60, -- Distance in kilometers, if an airbase is closer than this from nearest enemy airbase it is considered a frontline airbase
@@ -57,6 +59,15 @@ env.info(string.format("HaveChips %s loading ", HC.VERSION))
 --This is the main entry point to HC
 function HC:Start()
     HC:T("Starting HaveChips "..HC.VERSION)
+    if (HC.HAVECHIPS_LOG_PATH ~= nil) then
+        HC.HAVECHIPS_LOG_FILE = io.open(HC.HAVECHIPS_LOG_PATH, "w")
+        HC.HAVECHIPS_LOG_FILE:write("\n")
+        HC.HAVECHIPS_LOG_FILE:close()
+        HC.HAVECHIPS_LOG_FILE = io.open(HC.HAVECHIPS_LOG_PATH, "a")
+        HC.HAVECHIPS_LOG_FILE:write("HaveChips "..HC.VERSION.." started at "..os.date().."\n")
+    end
+
+
     --Initialize group templates, we will need them later
     HC:InitGroupTemplates()
     --Create MOOSE CHIEFS, we will need them later
@@ -77,8 +88,8 @@ function HC:Start()
         --we will use a special aircraft group called WP_TEMPLATE to assign waypoint numbers to strategic zones        
         local route = wpGroup:GetTemplateRoutePoints()
         local wpList = {}
-        for k, v in pairs(route) do
-            table.insert(wpList, k, {x = v.x, y=v.y})
+        for _, v in ipairs(route) do
+            table.insert(wpList, {x = v.x, y=v.y})
         end
         wpGroup:Destroy() --we don't need it any more, we just wanted waypoints
         local bases = SET_AIRBASE:New():FilterCoalitions({"red", "blue"}):FilterCategories({"helipad", "airdrome"}):FilterOnce() --get only red and blue, ignore neutral
@@ -88,13 +99,16 @@ function HC:Start()
                 HC:T(abi.Name)
                 for i=1, #wpList do
                     local zone = b.AirbaseZone
+                    if (i == 34 and abi.Name=="Gaziantep") then
+                        env.info("33")
+                    end
                     if (zone:IsVec2InZone(wpList[i])) then
-                        abi.WPIndex = i
-                        HC.ActiveAirbases[abi.Name] = abi
+                        abi.WPIndex = i - 1
                         HC:T(b:GetName().." assigned index "..tostring(i))
                         break
                     end
                 end
+                HC.ActiveAirbases[abi.Name] = abi
                 abi:DrawLabel()
             end
         )
@@ -169,6 +183,9 @@ function HC:Start()
         local blue_empty, blue_occupied = HC:GetChiefZoneResponse(HC.RED.CHIEF)
         HC.BLUE.CHIEF:AddStrategicZone(opsZone, nil, nil, blue_occupied, blue_empty)
     end
+    --Setup AWACS operations
+    HC:SetupAWACSOperations("RED")
+    HC:SetupAWACSOperations("BLUE")
 
     -- Periodic calls
     --rebuilds base defences based on HP at that moment

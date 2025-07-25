@@ -254,7 +254,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local airbaseStorage = STORAGE:FindByName(airbaseName)
     --check chief units, remove if legions already exist
     local brigadeName = string.format("%s Brigade %s", side, airbaseName)
-    local airwingName = string.format("%s Air wing %s", side, airbaseName)
+    local airwingName = string.format("%s Air Wing %s", side, airbaseName)
     local brigade = nil
     local airwing = nil
     HC:T(string.format("[%s] Setting up CHIEF units", airbaseName))
@@ -329,6 +329,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
+
     airwing:SetTakeoffAir()
     airwing:SetDespawnAfterHolding(true)
     airwing:SetDespawnAfterLanding(true)
@@ -373,6 +374,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
             airbaseStorage:AddItem(itemName, squadron.Ngroups * squadron.ngrouping)
         end
     end
+
     --Fixed wing assets only for airfields, FARPS have only helicopters (and possibly VTOLs)
     if(airbase:GetCategory() == Airbase.Category.AIRDROME or #(airbase.runways)>0) then
         if (abi:IsFrontline()) then
@@ -421,7 +423,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(100)
                     squadron:SetTurnoverTime(10, 0)
-                    airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, FIGHTER_TASKS)
                     airwing:AddSquadron(squadron)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
@@ -800,6 +802,65 @@ function HC:SetupAirbaseStatics(airbaseName)
                 end
             end            
         end
-    end
+    end    
+end
 
+---Sets up AWACS operations for given coalition, it looks for closest friendly airbase to designated AWACS orbit zone and adds 
+function HC:SetupAWACSOperations(side) 
+    --find the coalition's AWACS zone
+    local zone = ZONE:FindByName(string.upper(side).."_AWACS_ZONE")
+    local zoneCoord = zone:GetCoordinate()
+    --find a friendly airbase nearest to the AWACS Zone
+    local friendlyAirdields = SET_AIRBASE:New():FilterCoalitions(string.lower(side)):FilterCategories("airdrome"):FilterOnce()
+    local airbase = friendlyAirdields:FindNearestAirbaseFromPointVec2(zoneCoord)
+    local airbaseName =airbase:GetName()
+    local dist = zoneCoord:Get2DDistance(airbase:GetCoordinate())
+    --create an AWACS squadron
+    local awacsTemplates = HC:GetRandomTemplates(side, "AWACS", 1)
+    if (#awacsTemplates == 0) then
+        HC:W(string.format("Couldn't find a template for %s AWACS, no AWACS support will be available for %s", side, side)) 
+        return
+    end        
+    local templateGroupName = HC:GetRandomTemplates(side, "AWACS", 1)[1]
+    local squadronName = string.format("%s|| AWACS Sq. %s", airbaseName, side)
+    local awacsSquadron = SQUADRON:New(templateGroupName, 6, squadronName)
+    awacsSquadron:AddMissionCapability({AUFTRAG.Type.ORBIT, AUFTRAG.Type.AWACS},100)
+    awacsSquadron:SetFuelLowRefuel(true)
+    awacsSquadron:SetGrouping(1)
+    awacsSquadron:SetSkill(AI.Skill.EXCELLENT)
+    awacsSquadron:SetFuelLowThreshold(0.2)
+    awacsSquadron:SetTurnoverTime(5,0) --5 minutes to refuel, instant repair
+    awacsSquadron:SetTakeoffAir() --spawn AWACS in the air
+    --add AWACS squadron to the existing airwing
+    --find AIRWING
+    local airwing = nil
+    local legions = HC[string.upper(side)].CHIEF.commander.legions
+    for _, legion in ipairs(legions) do
+        if(legion:GetName() == string.upper(side).." Air Wing "..airbase:GetName()) then
+            airwing = legion
+            break
+        end
+    end
+    if(not airwing) then
+        HC:W(string.format("Couldn't find an air wing for %s AWACS, Air Wing [%s] not found", side, string.upper(side).." Air Wing "..airbase:GetName()))
+        return
+    end
+    --Add Squadron
+    airwing:AddSquadron(awacsSquadron)
+    --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
+    local airbaseStorage = STORAGE:FindByName(airbaseName)
+    local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
+    airbaseStorage:AddItem(itemName, awacsSquadron.Ngroups * awacsSquadron.ngrouping)   
+    --Add payload
+    airwing:NewPayload(GROUP:FindByName(templateGroupName), 100, {AUFTRAG.Type.ORBIT, AUFTRAG.Type.AWACS})
+    --Set airwing awacs and CAP options 
+    airwing:SetNumberCAP(1)
+    airwing:SetNumberAWACS(1)
+    --add AWACS and CAP zone to CHIEF and airwing
+    -- 30kfeet alt, 350kts, heading 270 (east to west), race-track length 40 NM
+    airwing:AddPatrolPointAWACS(zone:GetCoordinate(), 30000, 350, 270, 40)
+    airwing:AddPatrolPointCAP(zone:GetCoordinate(), 28000, 350, 270, 40)
+    --HC[string.upper(side)].CHIEF:AddAwacsZone(zone, 30000, 350, 270, 40)
+    --HC[string.upper(side)].CHIEF:AddCapZone(zone, 28000, 350, 270, 40)
+    --airwing.verbose = 5
 end
