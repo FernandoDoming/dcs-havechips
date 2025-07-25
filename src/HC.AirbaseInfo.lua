@@ -200,8 +200,13 @@ function AIRBASEINFO:DrawLabel()
                 end
             else
                 if (not friendlyMissionIds["Anr" ..m.Mission.auftragsnummer]) then
-                    friendlyMisionsText = friendlyMisionsText..string.format(" AI Friendly %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
-                    friendlyMissionIds["Anr" ..m.Mission.auftragsnummer] = true
+                    if (m.Mission.current ~= AUFTRAG.Status.DONE 
+                        and m.Mission.current ~= AUFTRAG.Status.CANCELLED
+                        and m.Mission.current ~= AUFTRAG.Status.FAILED
+                        and m.Mission.current ~= AUFTRAG.Status.SUCCESS) then
+                            friendlyMisionsText = friendlyMisionsText..string.format(" AI Friendly %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
+                            friendlyMissionIds["Anr" ..m.Mission.auftragsnummer] = true                        
+                    end
                 end
             end
         end
@@ -215,7 +220,11 @@ function AIRBASEINFO:DrawLabel()
                 local pos = target:GetCoordinate()
                 local thisZone = ZONE:FindByName(self.Name)
                 if (not enemyMissionIds["Anr" ..m.auftragsnummer]) then
-                    if(m.missionTask ~= "Nothing") then
+                    if(m.missionTask ~= "Nothing" 
+                        and m.current ~= AUFTRAG.Status.DONE 
+                        and m.current ~= AUFTRAG.Status.CANCELLED
+                        and m.current ~= AUFTRAG.Status.FAILED
+                        and m.current ~= AUFTRAG.Status.SUCCESS) then
                         if (thisZone:IsVec3InZone(pos)) then
                             enemyMissionsText = enemyMissionsText..string.format(" AI %s [#%s] \n", m.missionTask, m.auftragsnummer)
                         end
