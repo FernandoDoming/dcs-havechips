@@ -18,7 +18,7 @@ HC = {
             FARP = nil
         }
     },
-    HAVECHIPS_LOG_PATH = lfs.writedir().."Logs\\HaveChips.log", --log file name
+    HAVECHIPS_LOG_PATH = nil, --lfs.writedir().."Logs\\HaveChips.log", --log file name
     HAVECHIPS_LOG_FILE = nil,
     BASE_PATH = lfs.writedir().."Missions\\havechips\\", --base filename path
     PERSIST_FILE_NAME = "airbases.json", --file name to save persistence data to

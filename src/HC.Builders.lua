@@ -862,5 +862,5 @@ function HC:SetupAWACSOperations(side)
     airwing:AddPatrolPointCAP(zone:GetCoordinate(), 28000, 350, 270, 40)
     --HC[string.upper(side)].CHIEF:AddAwacsZone(zone, 30000, 350, 270, 40)
     --HC[string.upper(side)].CHIEF:AddCapZone(zone, 28000, 350, 270, 40)
-    airwing.verbose = 5
+    --airwing.verbose = 5
 end
