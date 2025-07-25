@@ -190,8 +190,13 @@ function AIRBASEINFO:DrawLabel()
         for _, m in pairs(oz.Missions) do
             if (m.Coalition ~= self.Coalition) then
                 if (not enemyMissionIds["Anr" ..m.Mission.auftragsnummer]) then
-                    enemyMissionsText = enemyMissionsText..string.format(" AI %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
-                    enemyMissionIds["Anr" ..m.Mission.auftragsnummer] = true
+                    if (m.Mission.current ~= AUFTRAG.Status.DONE 
+                        and m.Mission.current ~= AUFTRAG.Status.CANCELLED
+                        and m.Mission.current ~= AUFTRAG.Status.FAILED
+                        and m.Mission.current ~= AUFTRAG.Status.SUCCESS) then
+                        enemyMissionsText = enemyMissionsText..string.format(" AI %s [#%s] \n", m.Type, m.Mission.auftragsnummer)
+                        enemyMissionIds["Anr" ..m.Mission.auftragsnummer] = true                    
+                    end
                 end
             else
                 if (not friendlyMissionIds["Anr" ..m.Mission.auftragsnummer]) then
