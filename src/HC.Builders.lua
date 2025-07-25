@@ -325,7 +325,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
     HC:T(string.format("[%s] Setting up %s DONE", airbaseName, brigadeName))
     
     --Air unit mission type groups
-    local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT, AUFTRAG.Type.GCICAP}
+    local FIGHTER_TASKS = {AUFTRAG.Type.CAP, AUFTRAG.Type.ESCORT, AUFTRAG.Type.GCICAP, AUFTRAG.Type.INTERCEPT}
     local STRIKER_TASKS = {AUFTRAG.Type.CAS, AUFTRAG.Type.STRIKE, AUFTRAG.Type.BAI, AUFTRAG.Type.CASENHANCED}
     local HELI_TRANSPORT_TASKS = {AUFTRAG.Type.TROOPTRANSPORT, AUFTRAG.Type.CARGOTRANSPORT, AUFTRAG.Type.OPSTRANSPORT}
 
@@ -423,7 +423,7 @@ function HC:SetupAirbaseChiefUnits(warehouse, airbase)
                     squadron:SetGrouping(2)
                     squadron:SetMissionRange(100)
                     squadron:SetTurnoverTime(10, 0)
-                    airwing:NewPayload(GROUP:FindByName(templates.CAP[i]), 20, FIGHTER_TASKS)
+                    airwing:NewPayload(GROUP:FindByName(templateGroupName), 20, FIGHTER_TASKS)
                     airwing:AddSquadron(squadron)
                     --add airframe to airbase warehouse otherwise chief won't be able to spawn units...confusing bcs we also have mandatory static object as airwing warehouse
                     local itemName = GROUP:FindByName(templateGroupName):GetUnit(1):GetTypeName()
