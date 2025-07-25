@@ -234,3 +234,74 @@ end
 --find it in auftrag, this is the part of function that creates mission waypoint
 waypointcoord=coord:GetIntermediateCoordinate(self:GetTargetCoordinate(), self.missionFraction)
 
+BASE:TraceOn()
+BASE:TraceLevel(2)
+BASE:TraceClass("LEGION")
+BASE:TraceClass("COMMANDER")
+BASE:TraceClass("COHORT")
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+local BombMission = AUFTRAG:NewCASENHANCED(targetZone,25000,550,15,nil,{"Helicopters","Ground Units","Air Defence"})
+--local BombMission = AUFTRAG:NewBAI(BomberTargets,25000)
+    BomberGroup:AddMission(BombMission)
+    BombMission.missionFraction=0.65
+    BombMission:SetWeaponExpend(AI.Task.WeaponExpend.ALL)
+    BombMission:SetMissionSpeed(550)
+    BombMission:SetMissionAltitude(25000)
+    
+    function BombMission:OnAfterExecuting(From, Event, To)
+    BombMission:SetROE(1)
+    BombMission:SetEngageDetected(15)
+    BombMission:SetEngageAsGroup(false)
+    BombMission:SetMissionSpeed(450)
+    end
+    function BombMission:OnAfterSuccess(From, Event, To)
+        if setStaticBomber:Count() < 0 then
+        Trigger.action.outTextForCoalition(2, "Bomber Group has successfully completed its mission", 15)
+        end
+    end
+    if setStaticBomber:Count() > 0 then
+        local auftragstatic = AUFTRAG:NewBAI(setStaticBomber, 25000)
+        auftragstatic:SetWeaponExpend(AI.Task.WeaponExpend.ONE)
+        auftragstatic:SetEngageAsGroup(false)
+        auftragstatic:SetMissionSpeed(600)
+        BomberGroup:AddMission(auftragstatic)
+        function auftragstatic:OnAfterExecuting(From, Event, To)
+        BomberGroup:SwitchROE(1)
+        auftragstatic:SetFormation(131075)
+        auftragstatic:SetMissionSpeed(380)
+        end
+        function auftragstatic:OnAfterSuccess(From, Event, To)
+            if setStaticBomber:Count() > 0 then
+            Trigger.action.outTextForCoalition(2, "Bomber Group has successfully completed its mission", 15)
+            end
+        end
+    end
+
+    function BomberGroup:OnAfterLanded(From, Event, To)
+        self:ScheduleOnce(5, function() self:Destroy() end)
+    end
+    function BomberGroup:OnAfterOutOfMissilesAG(From, Event, To)
+        trigger.action.outTextForCoalition(2, "Bomber Group is now RTB", 15)
+    end
+    function BomberGroup:OnAfterDead(From, Event, To)
+        local landed = (From=="Landed") or (From=="Arrived")
+        _DATABASE.FLIGHTGROUPS[BomberGroup.groupname] = nil
+        BomberGroup  = nil
+        bomberActive = false
+        buildCapControlMenu()
+        if landed then
+            trigger.action.outTextForCoalition(2, "Bomber Group have landed", 15)
+        else
+            trigger.action.outTextForCoalition(2, "Bomber Group have been killed", 15)
+        end
+    end
+    trigger.action.outTextForCoalition(2, "Bomber flight launched from " .. zoneName .. " to attack " .. targetZoneName, 15)
+  end, g, timer.getTime() + 1)
+    bomberActive = true
+    buildCapControlMenu()
+    bombSpawnIndex = bombSpawnIndex + 1
+end
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
