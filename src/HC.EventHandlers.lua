@@ -78,16 +78,16 @@ function HC:OnEventUnitLost(e)
             return
         end
         baseName = string.sub(baseName, 1, string.len(baseName) - 2)
-        AIRBASEINFO.ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
         HC:T(string.format("Unit %s %s belonging to %s got destroyed", e.IniDCSUnit:getDesc().typeName, e.IniUnitName, baseName))
+        AIRBASEINFO.ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
     elseif(e.IniObjectCategory == Object.Category.STATIC) then
         local baseName = string.match(e.IniDCSUnitName, '.-||')
         if (not baseName) then
             return
         end
         baseName = string.sub(baseName, 1, string.len(baseName) - 2)
-        AIRBASEINFO:ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
         HC:T(string.format("Static %s % belonging to %s got destroyed", e.IniDCSUnit:getDesc().typeName, e.IniUnitName, baseName))
+        AIRBASEINFO:ApplyAirbaseUnitLossPenalty(baseName, e.IniDCSUnit)
     end
     return true
 end
